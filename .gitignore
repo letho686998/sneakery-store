@@ -1,0 +1,76 @@
+# Dependencies
+node_modules
+target
+
+# Root level npm files (not needed for monorepo)
+package.json
+package-lock.json
+
+# Preliminary report files from JDiff/JDepend
+.auxclasspath
+.buildpath
+.classpath
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE - Visual Studio Code
+.vscode
+*.code-workspace
+
+# IDE - IntelliJ IDEA
+.idea
+*.iml
+*.iws
+*.ipr
+
+# IDE - Cursor
+.cursor
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Application properties with secrets
+sneakery-backend/src/main/resources/application.properties
+# Keep example file instead
+# sneakery-backend/src/main/resources/application.properties.example
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist
+build
+out
+
+# Frontend specific
+.vite
+sneakery-frontend/dist
+# Note: Keep package-lock.json for consistency
+
+# Temporary files
+*.tmp
+*.temp
+.cache
