@@ -2,6 +2,7 @@ package com.sneakery.store.controller;
 
 import com.sneakery.store.entity.InventoryLog;
 import com.sneakery.store.entity.ProductVariant;
+import com.sneakery.store.exception.InventoryLogNotFoundException;
 import com.sneakery.store.repository.InventoryLogRepository;
 import com.sneakery.store.repository.ProductVariantRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
+
 /**
  * Admin Inventory Controller
  * Quản lý inventory logs và stock management cho admin
@@ -23,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/inventory")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class AdminInventoryController {
 
     private final InventoryLogRepository inventoryLogRepository;
@@ -91,8 +94,8 @@ public class AdminInventoryController {
     public ResponseEntity<InventoryLog> getLogById(@PathVariable Long id) {
         log.info("📊 Fetching inventory log ID: {}", id);
         
-        InventoryLog log = inventoryLogRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Inventory log not found with id: " + id));
+        InventoryLog log = inventoryLogRepository.findById(Objects.requireNonNull(id))
+            .orElseThrow(() -> new InventoryLogNotFoundException(id));
         
         return ResponseEntity.ok(log);
     }

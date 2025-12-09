@@ -1,53 +1,174 @@
 <template>
-  <router-link :to="`/products/${product.id}`" class="product-card-link">
-    <div class="product-card">
-      <div class="product-image-container">
+  <router-link :to="`/home/products/${product.slug}`" class="product-card-link">
+    <div class="product-card group">
+      <div
+        class="product-image-container relative overflow-hidden"
+        @mouseenter="isHover = true"
+        @mouseleave="isHover = false"
+      >
+        <!-- Badges -->
+        <div class="product-badges">
+          <span v-if="product.isNew" class="badge badge-new">Mới</span>
+          <span v-if="product.isFeatured" class="badge badge-featured"
+            >Nổi bật</span
+          >
+          <span v-if="!product.inStock" class="badge badge-out-of-stock"
+            >Hết hàng</span
+          >
+        </div>
+
+        <!-- Stock Badge -->
+        <div
+          v-if="product.totalStock !== null && product.totalStock !== undefined"
+          class="stock-badge"
+        >
+          <span
+            class="stock-badge-text"
+            :class="{
+              'stock-out': product.totalStock === 0 || !product.inStock,
+              'stock-ok': product.totalStock > 0 && product.inStock,
+            }"
+          >
+            {{
+              product.totalStock > 0 && product.inStock
+                ? "Còn hàng"
+                : "Hết hàng"
+            }}
+          </span>
+        </div>
+
         <!-- Flash Sale Badge -->
         <FlashSaleBadge
           v-if="productFlashSale"
           :flashSale="productFlashSale"
           class="compact"
         />
-        
-        <img :src="product.imageUrl || '/placeholder-image.png'" class="product-image" :alt="product.name" />
-      <div class="product-overlay">
-        <button class="btn-icon btn-favorite" @click="toggleFavorite">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20.84 4.61C20.3292 4.099 19.7228 3.69364 19.0554 3.41708C18.3879 3.14052 17.6725 2.99817 16.95 2.99817C16.2275 2.99817 15.5121 3.14052 14.8446 3.41708C14.1772 3.69364 13.5708 4.099 13.06 4.61L12 5.67L10.94 4.61C9.9083 3.5783 8.50903 2.9987 7.05 2.9987C5.59096 2.9987 4.19169 3.5783 3.16 4.61C2.1283 5.6417 1.5487 7.04097 1.5487 8.5C1.5487 9.95903 2.1283 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.351 11.8792 21.7563 11.2728 22.0329 10.6053C22.3095 9.93789 22.4518 9.22248 22.4518 8.5C22.4518 7.77752 22.3095 7.06211 22.0329 6.39467C21.7563 5.72723 21.351 5.1208 20.84 4.61Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <button class="btn-icon btn-cart" @click="addToCart">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-    
-    <div class="product-info">
-      <span class="brand-name">{{ product.brandName }}</span>
-      <h3 class="product-name">{{ product.name }}</h3>
-      <div class="product-footer">
-        <div class="price-wrapper">
-          <span v-if="productFlashSale" class="price-original">{{ formatCurrency(product.price) }}</span>
-          <span class="price">{{ formatCurrency(finalPrice) }}</span>
+
+        <!-- Ảnh chính -->
+        <img
+          :src="mainImage"
+          class="product-image product-main transition-opacity duration-300"
+          :class="{ 'opacity-0': isHover }"
+          :alt="product.name"
+        />
+
+        <!-- Ảnh hover -->
+        <img
+          v-if="hoverImage"
+          :src="hoverImage"
+          class="product-image product-hover absolute inset-0 transition-opacity duration-300"
+          :class="{ 'opacity-100': isHover, 'opacity-0': !isHover }"
+          :alt="product.name"
+        />
+
+        <!-- Overlay -->
+        <div class="product-overlay">
+          <button
+            class="btn-icon btn-quick-view"
+            @click.prevent="openQuickView"
+            title="Xem nhanh"
+          >
+            <i class="material-icons">visibility</i>
+          </button>
+          <button
+            class="btn-icon btn-favorite"
+            @click.prevent="handleToggleFavorite"
+            title="Yêu thích"
+            :class="{ active: isInWishlist }"
+            :disabled="isTogglingFavorite"
+          >
+            <i class="material-icons" v-if="!isTogglingFavorite">
+              {{ isInWishlist ? "favorite" : "favorite_border" }}
+            </i>
+            <div
+              v-else
+              class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"
+            ></div>
+          </button>
         </div>
-        <button class="btn-add-cart" @click="addToCart">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 3H5L5.4 5M7 13H17L21 5H5.4M7 13L5.4 5M7 13L4.7 15.3C4.3 15.7 4.6 16.5 5.1 16.5H17M17 13V17C17 18.1 16.1 19 15 19H9C7.9 19 7 18.1 7 17V13M17 13H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
       </div>
-    </div>
+
+      <div class="product-info">
+        <span class="brand-name">{{ getBrandName() }}</span>
+        <h3 class="product-name">{{ product.name }}</h3>
+
+        <!-- Rating -->
+        <div v-if="product.avgRating" class="product-rating">
+          <div class="stars">
+            <i
+              v-for="i in 5"
+              :key="i"
+              class="material-icons star"
+              :class="{ filled: i <= Math.round(product.avgRating) }"
+            >
+              {{ i <= Math.round(product.avgRating) ? "star" : "star_border" }}
+            </i>
+          </div>
+          <span class="rating-text">
+            {{ product.avgRating.toFixed(1) }}
+            <span v-if="product.reviewCount" class="review-count"
+              >({{ product.reviewCount }})</span
+            >
+          </span>
+        </div>
+
+        <div class="product-footer">
+          <div class="price-wrapper">
+            <span
+              v-if="
+                productFlashSale &&
+                originalPrice > 0 &&
+                finalPrice < originalPrice
+              "
+              class="price-original"
+            >
+              {{ formatCurrency(originalPrice) }}
+            </span>
+            <span class="price">{{ formatCurrency(finalPrice) }}</span>
+          </div>
+          <button
+            class="btn-add-cart"
+            @click.prevent="handleQuickAddToCart"
+            :disabled="!canAddToCart || isAddingToCart"
+            :class="{
+              'opacity-50 cursor-not-allowed': !canAddToCart || isAddingToCart,
+            }"
+            title="Thêm nhanh vào giỏ hàng"
+          >
+            <i class="material-icons" v-if="!isAddingToCart"
+              >add_shopping_cart</i
+            >
+            <div
+              v-else
+              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></div>
+          </button>
+        </div>
+      </div>
     </div>
   </router-link>
+
+  <!-- Quick View Modal -->
+  <QuickViewModal
+    v-model:isOpen="showQuickView"
+    :productId="product.id"
+    @added-to-cart="handleQuickViewAddedToCart"
+  />
 </template>
-  
+
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useFlashSaleStore } from '@/stores/flashSale';
-import { storeToRefs } from 'pinia';
-import FlashSaleBadge from '@/assets/components/common/FlashSaleBadge.vue';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { useCartStore } from "@/stores/cart";
+import { useWishlistStore } from "@/stores/wishlist";
+import { useFlashSaleStore } from "@/stores/flashSale";
+// import notificationService from "@/utils/notificationService";
+import notificationService from "@/utils/notificationService";
+import logger from "@/utils/logger";
+import FlashSaleBadge from "@/assets/components/common/FlashSaleBadge.vue";
+import QuickViewModal from "@/assets/components/common/QuickViewModal.vue";
+import { useProductImageStore } from "@/stores/productImages";
 
 // Props
 const props = defineProps({
@@ -57,378 +178,700 @@ const props = defineProps({
   },
 });
 
-// Stores
+// Router & Stores
+const router = useRouter();
+const authStore = useAuthStore();
+const cartStore = useCartStore();
+const wishlistStore = useWishlistStore();
 const flashSaleStore = useFlashSaleStore();
-const { activeFlashSales } = storeToRefs(flashSaleStore);
+const productImageStore = useProductImageStore();
+const isHover = ref(false);
 
 // Reactive state
-const isFavorite = ref(false);
+const isAddingToCart = ref(false);
+const isTogglingFavorite = ref(false);
+const showQuickView = ref(false);
+
+// Fetch flash sales on mount if not already loaded
+onMounted(async () => {
+  if (flashSaleStore.activeFlashSales.length === 0) {
+    try {
+      await flashSaleStore.fetchActiveFlashSales();
+    } catch (error) {
+      logger.warn("Failed to fetch flash sales in ProductCard:", error);
+    }
+  }
+});
+
+// Computed - Check if product is in wishlist
+const isInWishlist = computed(() => {
+  return wishlistStore.isInWishlist(props.product.id);
+});
 
 // Computed
 const productFlashSale = computed(() => {
   return flashSaleStore.getFlashSaleForProduct(props.product.id);
 });
 
+// Computed - Optimized image URL với Cloudinary
+const optimizedImageUrl = computed(() => {
+  // Ưu tiên mainImageUrl, sau đó imageUrl, cuối cùng placeholder
+  const imageUrl =
+    props.product.mainImageUrl ||
+    props.product.imageUrl ||
+    "/placeholder-image.png";
+
+  // Nếu là Cloudinary URL, optimize cho thumbnail size (400x400)
+  if (imageUrl && imageUrl.startsWith("http")) {
+    return getOptimizedImageUrl(imageUrl, {
+      width: 400,
+      height: 400,
+      quality: "auto",
+      format: "auto",
+    });
+  }
+
+  return imageUrl;
+});
+
+// Helper function to get product price from variants or direct price
+const getProductPrice = () => {
+  // If product has price directly
+  if (
+    props.product.price !== null &&
+    props.product.price !== undefined &&
+    !isNaN(props.product.price)
+  ) {
+    return Number(props.product.price);
+  }
+
+  // If has variants, get price from first available variant
+  if (props.product.variants && props.product.variants.length > 0) {
+    const firstVariant =
+      firstAvailableVariant.value || props.product.variants[0];
+    if (firstVariant) {
+      // Prefer priceSale, fallback to priceBase
+      if (
+        firstVariant.priceSale !== null &&
+        firstVariant.priceSale !== undefined &&
+        !isNaN(firstVariant.priceSale)
+      ) {
+        return Number(firstVariant.priceSale);
+      }
+      if (
+        firstVariant.priceBase !== null &&
+        firstVariant.priceBase !== undefined &&
+        !isNaN(firstVariant.priceBase)
+      ) {
+        return Number(firstVariant.priceBase);
+      }
+    }
+  }
+
+  // If has priceBase or priceSale directly
+  if (
+    props.product.priceSale !== null &&
+    props.product.priceSale !== undefined &&
+    !isNaN(props.product.priceSale)
+  ) {
+    return Number(props.product.priceSale);
+  }
+  if (
+    props.product.priceBase !== null &&
+    props.product.priceBase !== undefined &&
+    !isNaN(props.product.priceBase)
+  ) {
+    return Number(props.product.priceBase);
+  }
+
+  return 0;
+};
+
 const finalPrice = computed(() => {
-  if (productFlashSale.value) {
+  const basePrice = getProductPrice();
+  if (productFlashSale.value && basePrice > 0) {
     return flashSaleStore.calculateDiscountedPrice(
-      props.product.price,
+      basePrice,
       productFlashSale.value.discountPercent
     );
   }
-  return props.product.price;
+  return basePrice;
+});
+
+// Get original price for display
+const originalPrice = computed(() => {
+  return getProductPrice();
+});
+
+// Lấy variant đầu tiên có stock > 0
+const firstAvailableVariant = computed(() => {
+  if (!props.product.variants || props.product.variants.length === 0) {
+    return null;
+  }
+
+  // Tìm variant đầu tiên có stock > 0
+  const availableVariant = props.product.variants.find(
+    (v) => v.stockQuantity > 0 && v.isActive !== false
+  );
+
+  // Nếu không tìm thấy, lấy variant đầu tiên
+  return availableVariant || props.product.variants[0];
+});
+
+// Kiểm tra sản phẩm có thể thêm vào giỏ hàng
+const canAddToCart = computed(() => {
+  // Kiểm tra stock
+  if (
+    props.product.totalStock !== null &&
+    props.product.totalStock !== undefined
+  ) {
+    if (props.product.totalStock <= 0) return false;
+  }
+
+  // Kiểm tra variants
+  if (props.product.variants && props.product.variants.length > 0) {
+    return firstAvailableVariant.value !== null;
+  }
+
+  // Nếu không có variants, kiểm tra inStock
+  return props.product.inStock !== false;
 });
 
 // Methods
+const getBrandName = () => {
+  // Try multiple sources for brand name
+  if (props.product.brand?.name) {
+    return props.product.brand.name;
+  }
+  if (props.product.brandName) {
+    return props.product.brandName;
+  }
+  // Try to get from flash sale if available
+  if (productFlashSale.value?.brandName) {
+    return productFlashSale.value.brandName;
+  }
+  return "Unknown";
+};
+
 const formatCurrency = (value) => {
-  if (value === null || value === undefined) return '0 ₫';
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  if (value === null || value === undefined) return "0 ₫";
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(numValue);
 };
 
-const toggleFavorite = (event) => {
-  event.preventDefault(); // Prevent navigation
+const handleToggleFavorite = async (event) => {
+  event.preventDefault();
   event.stopPropagation();
-  isFavorite.value = !isFavorite.value;
-  // TODO: Implement favorite functionality
+
+  if (!authStore.isAuthenticated) {
+    notificationService.warning(
+      "Cảnh báo",
+      "Vui lòng đăng nhập để thêm vào yêu thích"
+    );
+    router.push({
+      path: "/login",
+      query: { redirect: router.currentRoute.value.fullPath },
+    });
+    return;
+  }
+
+  if (isTogglingFavorite.value) return;
+
+  isTogglingFavorite.value = true;
+
+  try {
+    const result = await wishlistStore.toggleWishlist(props.product.id);
+
+    if (result.action === "added") {
+      notificationService.success("Thành công", "Đã thêm vào yêu thích");
+      logger.log("Product added to wishlist:", props.product.id);
+    } else {
+      notificationService.success("Thành công", "Đã xóa khỏi yêu thích");
+      logger.log("Product removed from wishlist:", props.product.id);
+    }
+  } catch (error) {
+    logger.error("Error toggling favorite:", error);
+
+    // Xử lý lỗi cụ thể
+    if (error.response?.status === 401) {
+      notificationService.warning(
+        "Cảnh báo",
+        "Vui lòng đăng nhập để thêm vào yêu thích"
+      );
+      router.push({
+        path: "/login",
+        query: { redirect: router.currentRoute.value.fullPath },
+      });
+    } else {
+      notificationService.error(
+        "Lỗi",
+        error.response?.data?.message || "Không thể cập nhật yêu thích"
+      );
+    }
+  } finally {
+    isTogglingFavorite.value = false;
+  }
 };
 
-const addToCart = (event) => {
-  event.preventDefault(); // Prevent navigation
+// Quick View
+const openQuickView = (event) => {
+  event.preventDefault();
   event.stopPropagation();
-  // TODO: Implement add to cart functionality
-  // console.log('Add to cart:', product.value); // Debug
+  showQuickView.value = true;
 };
+
+const handleQuickViewAddedToCart = () => {
+  // Refresh cart count after adding from quick view
+  cartStore.fetchCart().catch(() => {
+    // Silently fail
+  });
+};
+
+// Quick Add to Cart - Thêm nhanh vào giỏ hàng (nút lớn màu xanh ở footer)
+const handleQuickAddToCart = async (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  // Kiểm tra sản phẩm có thể thêm vào giỏ hàng
+  if (!canAddToCart.value) {
+    notificationService.error("Lỗi", "Sản phẩm này hiện không có sẵn");
+    return;
+  }
+
+  // Nếu sản phẩm có nhiều variants, redirect đến trang chi tiết để chọn
+  if (props.product.variants && props.product.variants.length > 1) {
+    try {
+      await router.push(`/home/products/${props.product.slug}`);
+    } catch (navError) {
+      logger.error("Navigation error:", navError);
+      notificationService.error("Lỗi", "Không thể mở trang chi tiết sản phẩm");
+    }
+    return;
+  }
+
+  // Lấy variant ID
+  let variantId = null;
+  if (props.product.variants && props.product.variants.length > 0) {
+    variantId = firstAvailableVariant.value?.id;
+    if (!variantId) {
+      notificationService.error("Lỗi", "Không tìm thấy biến thể sản phẩm");
+      return;
+    }
+  } else if (props.product.variantId) {
+    variantId = props.product.variantId;
+  } else {
+    // Nếu không có variant, redirect đến trang chi tiết
+    try {
+      await router.push(`/home/products/${props.product.slug}`);
+    } catch (navError) {
+      logger.error("Navigation error:", navError);
+      notificationService.error("Lỗi", "Không thể mở trang chi tiết sản phẩm");
+    }
+    return;
+  }
+
+  if (isAddingToCart.value) return;
+
+  isAddingToCart.value = true;
+
+  try {
+    // Sử dụng cart store để thêm vào giỏ hàng
+    await cartStore.addItem(variantId, 1);
+    notificationService.success("Thành công", "Đã thêm sản phẩm vào giỏ hàng");
+    logger.log("Product quick added to cart:", variantId);
+  } catch (error) {
+    logger.error("Error quick adding to cart:", error);
+
+    // Xử lý lỗi cụ thể
+    if (error.response?.status === 401) {
+      notificationService.warning(
+        "Cảnh báo",
+        "Vui lòng đăng nhập để thêm vào giỏ hàng"
+      );
+      router.push({
+        path: "/login",
+        query: { redirect: router.currentRoute.value.fullPath },
+      });
+    } else if (error.response?.status === 400) {
+      notificationService.error(
+        "Lỗi",
+        error.response?.data?.message ||
+          "Sản phẩm không có sẵn hoặc đã hết hàng"
+      );
+    } else {
+      notificationService.error(
+        "Lỗi",
+        error.response?.data?.message || "Không thể thêm vào giỏ hàng"
+      );
+    }
+  } finally {
+    isAddingToCart.value = false;
+  }
+};
+
+const productImages = computed(() => {
+  return productImageStore.imagesByProduct[props.product.id] || [];
+});
+
+const mainImage = computed(() => {
+  return (
+    productImages.value[0] ||
+    props.product.mainImageUrl ||
+    props.product.imageUrl ||
+    "/placeholder-image.png"
+  );
+});
+
+const hoverImage = computed(() => {
+  return productImages.value.length > 1 ? productImages.value[1] : null;
+});
+
+// Load wishlist status on mount
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    try {
+      await wishlistStore.fetchWishlist();
+    } catch (error) {
+      // Silently fail - wishlist will be loaded when needed
+      logger.warn("Failed to fetch wishlist on mount:", error);
+    }
+  }
+});
+
+// Watch for product changes
+watch(
+  () => props.product.id,
+  () => {
+    // Product changed, wishlist status will update automatically via computed
+  }
+);
 </script>
-  
-<style scoped>
-/* ═══════════════════════════════════════════════════════════════════════
-   🛍️ PRODUCT CARD COMPONENT
-   Component hiển thị thông tin sản phẩm với hover effects
-   ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─────────────────────────────────────────────────────────────────────
-   1. Card Link Wrapper
-   ───────────────────────────────────────────────────────────────────── */
+<style scoped>
 .product-card-link {
   display: block;
-  height: 100%;
   text-decoration: none;
   color: inherit;
-  transition: opacity var(--transition-fast);
+  height: 100%;
 }
 
-.product-card-link:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 4px;
-  border-radius: var(--radius-xl);
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   2. Card Container - Dark Theme
-   ───────────────────────────────────────────────────────────────────── */
 .product-card {
-  /* Layout */
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  position: relative;
+  background: white;
+  border-radius: 1rem;
   overflow: hidden;
-  
-  /* Visual - Dark */
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(167, 139, 250, 0.15);
-  border-radius: var(--radius-xl);
-  backdrop-filter: blur(10px);
-  
-  /* Effects */
-  transition: all var(--transition-normal);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
 }
 
-.product-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(167, 139, 250, 0.3);
-  border-color: rgba(167, 139, 250, 0.4);
-  background: rgba(30, 41, 59, 0.8);
+.dark .product-card {
+  background: #1f2937;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   3. Image Section
-   ───────────────────────────────────────────────────────────────────── */
 .product-image-container {
   position: relative;
+  width: 100%;
+  aspect-ratio: 1;
   overflow: hidden;
-  aspect-ratio: 1 / 1;
-  background: rgba(15, 23, 42, 0.6);
+  background: #f3f4f6;
+}
+
+.dark .product-image-container {
+  background: #374151;
 }
 
 .product-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-normal);
+  transition: transform 0.5s ease;
 }
 
-.product-card:hover .product-image {
-  transform: scale(1.05);
+.group:hover .product-image {
+  transform: scale(1.1);
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   4. Action Overlay (Quick Actions)
-   ───────────────────────────────────────────────────────────────────── */
-.product-overlay {
-  /* Position */
+.product-badges {
   position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  z-index: var(--z-10);
-  
-  /* Layout */
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  
-  /* Effects */
-  opacity: 0;
-  transform: translateX(20px);
-  transition: all var(--transition-normal);
+  gap: 0.5rem;
 }
 
-.product-card:hover .product-overlay {
-  opacity: 1;
-  transform: translateX(0);
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   5. Icon Buttons
-   ───────────────────────────────────────────────────────────────────── */
-.btn-icon {
-  /* Sizing */
-  width: 40px;
-  height: 40px;
-  
-  /* Layout */
+.badge-new {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.badge-featured {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.badge-out-of-stock {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.stock-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+}
+
+.stock-badge-text {
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* Visual - Dark */
-  background: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(167, 139, 250, 0.3);
-  border-radius: var(--radius-full);
-  color: #e2e8f0;
-  
-  /* Effects */
+  padding: 0.375rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+}
+
+.stock-badge-text.stock-ok {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.stock-badge-text.stock-out {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.product-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 20;
+}
+
+.group:hover .product-overlay {
+  opacity: 1;
+}
+
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  transition: all var(--transition-normal);
+  transition: all 0.2s ease;
+  color: #374151;
 }
 
 .btn-icon:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(167, 139, 250, 0.5);
+  background: #9333ea;
+  color: white;
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.3);
 }
 
-.btn-icon:active {
-  transform: scale(0.95);
+.btn-icon.active {
+  background: #ef4444;
+  color: white;
 }
 
-.btn-favorite:hover {
-  color: var(--error-color);
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
-.btn-cart:hover {
-  color: var(--primary-color);
+.btn-icon:disabled:hover {
+  transform: none;
+  background: white;
+  color: #374151;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   6. Product Information
-   ───────────────────────────────────────────────────────────────────── */
+.btn-icon i {
+  font-size: 1.25rem;
+}
+
 .product-info {
-  /* Layout */
+  padding: 1rem;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
   flex: 1;
-  
-  /* Spacing */
-  padding: var(--space-4);
 }
 
-/* Brand Label - Dark */
 .brand-name {
-  /* Typography */
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9333ea;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: var(--leading-normal);
-  
-  /* Visual - Dark */
-  color: #94a3b8;
-  margin-bottom: var(--space-2);
+  letter-spacing: 0.05em;
 }
 
-/* Product Title - Dark */
+.dark .brand-name {
+  color: #a78bfa;
+}
+
 .product-name {
-  /* Typography */
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  line-height: var(--leading-snug);
-  
-  /* Visual - Dark */
-  color: #f1f5f9;
-  margin: 0 0 var(--space-3) 0;
-  min-height: 40px;
-  
-  /* Text Truncation - 2 lines max */
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8rem;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   7. Product Footer (Price & Action)
-   ───────────────────────────────────────────────────────────────────── */
-.product-footer {
-  /* Layout */
+.dark .product-name {
+  color: #f9fafb;
+}
+
+.product-rating {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-3);
-  margin-top: auto;
+  gap: 0.5rem;
 }
 
-/* Price Display - Dark */
+.stars {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.star {
+  font-size: 1rem;
+  color: #d1d5db;
+  transition: color 0.2s;
+}
+
+.star.filled {
+  color: #fbbf24;
+}
+
+.rating-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark .rating-text {
+  color: #9ca3af;
+}
+
+.review-count {
+  color: #9ca3af;
+}
+
+.product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .product-footer {
+  border-top-color: #374151;
+}
+
 .price-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  flex: 1;
+  gap: 0.25rem;
 }
 
 .price-original {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: #64748b;
+  font-size: 0.75rem;
+  color: #9ca3af;
   text-decoration: line-through;
 }
 
 .price {
-  /* Typography */
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  
-  /* Visual - Dark */
-  color: #c4b5fd;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ef4444;
 }
 
-/* Add to Cart Button */
+.dark .price {
+  color: #f87171;
+}
+
 .btn-add-cart {
-  /* Sizing */
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  
-  /* Layout */
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #9333ea, #7c3aed);
+  border: none;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  /* Visual */
-  background: var(--primary-gradient);
-  border: none;
-  border-radius: var(--radius-full);
-  color: var(--white);
-  
-  /* Effects */
   cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
 }
 
 .btn-add-cart:hover {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
   transform: scale(1.1);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
 }
 
-.btn-add-cart:active {
-  transform: scale(0.95);
+.btn-add-cart i {
+  font-size: 1.125rem;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   📱 8. RESPONSIVE DESIGN
-   ═══════════════════════════════════════════════════════════════════════ */
-
-/* ─────────────────────────────────────────────────────────────────────
-   Tablet & Below (≤768px)
-   ───────────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  /* Show overlay by default on touch devices */
-  .product-overlay {
-    opacity: 1;
-    transform: translateX(0);
-    position: static;
-    flex-direction: row;
-    justify-content: center;
-    margin-top: var(--space-2);
-  }
-  
-  /* Smaller icon buttons */
-  .btn-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  /* Adjust padding */
-  .product-info {
-    padding: var(--space-3);
-  }
-  
-  /* Smaller product name */
-  .product-name {
-    font-size: var(--text-sm);
-    min-height: 36px;
-  }
-  
-  /* Smaller price */
-  .price {
-    font-size: var(--text-base);
-  }
-  
-  /* Smaller add to cart button */
-  .btn-add-cart {
-    width: 32px;
-    height: 32px;
-  }
+.product-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Mobile (≤480px)
-   ───────────────────────────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  /* Stack footer vertically */
-  .product-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-2);
-  }
-  
-  /* Full-width cart button */
-  .btn-add-cart {
-    width: 100%;
-    height: 40px;
-    border-radius: var(--radius-lg);
-  }
-  
-  /* Adjust card hover on mobile */
-  .product-card:hover {
-    transform: translateY(-4px);
-  }
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+
+.product-main {
+  z-index: 5;
+}
+
+.product-hover {
+  z-index: 10;
 }
 </style>

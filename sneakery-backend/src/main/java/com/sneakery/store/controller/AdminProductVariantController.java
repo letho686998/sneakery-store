@@ -13,11 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/product-variants")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class AdminProductVariantController {
 
     private final AdminProductVariantService adminProductVariantService;
@@ -28,22 +30,25 @@ public class AdminProductVariantController {
     @GetMapping
     public ResponseEntity<Page<AdminProductVariantDto>> getAllVariants(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(value = "size", required = false) Integer pageSize, // ✅ Bỏ defaultValue, đổi tên để tránh conflict với filter size
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String color,
-            @RequestParam(required = false) String variantSize,
+            @RequestParam(value = "variantSize", required = false) String variantSize, // ✅ Filter size (giữ tên variantSize để tương thích)
             @RequestParam(required = false) String stockStatus,
             @RequestParam(required = false) Long productId,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDirection
     ) {
+        // ✅ Nếu pageSize không được gửi, sử dụng giá trị mặc định lớn để trả về tất cả
+        int finalPageSize = (pageSize != null && pageSize > 0) ? pageSize : Integer.MAX_VALUE;
+        
         Pageable pageable;
         if (sortBy != null && !sortBy.isEmpty()) {
             Sort.Direction direction = (sortDirection != null && sortDirection.equalsIgnoreCase("desc")) 
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
-            pageable = PageRequest.of(page, size, Sort.by(direction, mapSortField(sortBy)));
+            pageable = PageRequest.of(page, finalPageSize, Sort.by(direction, mapSortField(sortBy)));
         } else {
-            pageable = PageRequest.of(page, size);
+            pageable = PageRequest.of(page, finalPageSize);
         }
         
         ProductVariantFilterDto filter = ProductVariantFilterDto.builder()
@@ -93,6 +98,17 @@ public class AdminProductVariantController {
     }
 
     /**
+     * ✅ Tạo nhiều biến thể cùng lúc
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<List<AdminProductVariantDto>> createVariantsBatch(
+            @Valid @RequestBody List<AdminProductVariantRequestDto> requestList
+    ) {
+        List<AdminProductVariantDto> createdVariants = adminProductVariantService.createVariantsBatch(requestList);
+        return new ResponseEntity<>(createdVariants, HttpStatus.CREATED);
+    }
+
+    /**
      * Cập nhật biến thể
      */
     @PutMapping("/{id}")
@@ -132,5 +148,29 @@ public class AdminProductVariantController {
     public ResponseEntity<ProductVariantStatsDto> getVariantStatistics() {
         ProductVariantStatsDto stats = adminProductVariantService.getVariantStatistics();
         return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * Kiểm tra SKU trùng khi thêm mới
+     */
+    @GetMapping("/check-sku")
+    public ResponseEntity<Boolean> checkSkuExists(@RequestParam String sku) {
+        boolean exists = adminProductVariantService.existsBySku(sku.trim().toUpperCase());
+        return ResponseEntity.ok(exists);
+    }
+
+    /**
+     * Kiểm tra SKU trùng khi chỉnh sửa (loại biến thể hiện tại)
+     */
+    @GetMapping("/{id}/check-sku")
+    public ResponseEntity<Boolean> checkSkuExistsExceptThis(
+            @PathVariable Long id,
+            @RequestParam String sku
+    ) {
+        boolean exists = adminProductVariantService.existsBySkuExceptVariant(
+                id,
+                sku.trim().toUpperCase()
+        );
+        return ResponseEntity.ok(exists);
     }
 }

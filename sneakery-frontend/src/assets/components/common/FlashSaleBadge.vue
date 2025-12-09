@@ -8,7 +8,7 @@
 
     <!-- Discount Percentage -->
     <div class="discount-percentage">
-      -{{ flashSale.discountPercent }}%
+      -{{ formatDiscountPercent(flashSale.discountPercent) }}%
     </div>
 
     <!-- Countdown Timer (if active) -->
@@ -107,6 +107,15 @@ const progressPercentage = computed(() => {
   return Math.min((sold / props.flashSale.quantityLimit) * 100, 100)
 })
 
+// Format discount percent (handle BigDecimal from backend)
+const formatDiscountPercent = (discountPercent) => {
+  if (!discountPercent) return 0
+  const discount = typeof discountPercent === 'number' 
+    ? discountPercent 
+    : parseFloat(discountPercent) || 0
+  return Math.round(discount)
+}
+
 // Update current time every second
 const startTimer = () => {
   intervalId = setInterval(() => {
@@ -134,88 +143,76 @@ onUnmounted(() => {
 <style scoped>
 .flash-sale-badge {
   position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-  color: white;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 12px rgba(255, 65, 108, 0.4);
+  top: 12px;
+  left: 12px;
   z-index: 10;
+  background: linear-gradient(135deg, #f97316, #ef4444, #ec4899);
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  color: white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   min-width: 120px;
-  animation: pulse-glow 2s infinite;
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 4px 12px rgba(255, 65, 108, 0.4);
-  }
-  50% {
-    box-shadow: 0 4px 20px rgba(255, 65, 108, 0.8);
-  }
+.flash-sale-badge.compact {
+  top: 8px;
+  left: 8px;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  min-width: 100px;
 }
 
 .flash-sale-header {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  margin-bottom: var(--space-1);
+  gap: 4px;
+  margin-bottom: 4px;
 }
 
 .flash-sale-header .material-icons {
   font-size: 16px;
-  animation: bolt-flash 1.5s infinite;
-}
-
-@keyframes bolt-flash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  animation: pulse 2s infinite;
 }
 
 .flash-sale-label {
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-  letter-spacing: 0.5px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
 }
 
 .discount-percentage {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  line-height: 1;
-  margin-bottom: var(--space-2);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  font-weight: 900;
+  text-align: center;
+  margin: 4px 0;
 }
 
 .countdown-timer {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  background: rgba(255, 255, 255, 0.2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  margin-top: var(--space-2);
+  gap: 4px;
+  font-size: 0.7rem;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.timer-icon {
+.countdown-timer .timer-icon {
   font-size: 14px;
-}
-
-.timer-text {
-  font-family: 'Courier New', monospace;
 }
 
 .coming-soon {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  background: rgba(255, 255, 255, 0.2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  margin-top: var(--space-2);
+  gap: 4px;
+  font-size: 0.7rem;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .coming-soon .material-icons {
@@ -223,15 +220,18 @@ onUnmounted(() => {
 }
 
 .quantity-progress {
-  margin-top: var(--space-2);
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .progress-bar {
+  width: 100%;
   height: 4px;
   background: rgba(255, 255, 255, 0.3);
   border-radius: 2px;
   overflow: hidden;
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px;
 }
 
 .progress-fill {
@@ -242,44 +242,19 @@ onUnmounted(() => {
 }
 
 .progress-text {
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
+  font-size: 0.65rem;
+  text-align: center;
   display: block;
 }
 
-/* Compact Version (for small cards) */
-.flash-sale-badge.compact {
-  min-width: auto;
-  padding: var(--space-1) var(--space-2);
-}
-
-.flash-sale-badge.compact .discount-percentage {
-  font-size: var(--text-lg);
-  margin-bottom: 0;
-}
-
-.flash-sale-badge.compact .flash-sale-header {
-  margin-bottom: 0;
-}
-
-.flash-sale-badge.compact .countdown-timer,
-.flash-sale-badge.compact .quantity-progress {
-  display: none;
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-  .flash-sale-badge {
-    min-width: 100px;
-    padding: var(--space-1) var(--space-2);
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
   }
-  
-  .discount-percentage {
-    font-size: var(--text-xl);
-  }
-  
-  .flash-sale-label {
-    font-size: 10px;
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
   }
 }
 </style>

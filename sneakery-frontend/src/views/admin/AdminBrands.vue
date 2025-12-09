@@ -1,18 +1,31 @@
 <template>
-  <div class="admin-brands admin-page">
+  <div class="max-w-[1600px] mx-auto w-full p-4 space-y-4">
     <!-- ===== PAGE HEADER ===== -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title">
-            <span class="material-icons">local_offer</span>
+    <div
+      class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h1
+            class="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+          >
+            <i class="material-icons text-purple-600 dark:text-purple-400"
+              >local_offer</i
+            >
             Quản lý Thương hiệu
           </h1>
-          <p class="page-subtitle">Quản lý danh sách thương hiệu sản phẩm</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Quản lý danh sách thương hiệu sản phẩm
+          </p>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-primary" @click="openCreateModal">
-            <span class="material-icons">add</span>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-sm"
+            @click="openCreateModal"
+          >
+            <i class="material-icons text-base">add</i>
             Thêm Thương hiệu
           </button>
         </div>
@@ -20,308 +33,496 @@
     </div>
 
     <!-- ===== STATS GRID ===== -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon" style="background: var(--gradient-success)">
-          <span class="material-icons">check_circle</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">check_circle</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ activeBrandsCount }}</div>
-          <div class="stat-label">ĐANG HOẠT ĐỘNG</div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ activeBrandsCount }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            Đang hoạt động
+          </p>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon" style="background: var(--gradient-warning)">
-          <span class="material-icons">pause_circle</span>
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">pause_circle</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ inactiveBrandsCount }}</div>
-          <div class="stat-label">TẠM NGƯNG</div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ inactiveBrandsCount }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            Tạm ngưng
+          </p>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon" style="background: var(--gradient-info)">
-          <span class="material-icons">inventory</span>
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">inventory</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ brands.length }}</div>
-          <div class="stat-label">TỔNG THƯƠNG HIỆU</div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ brands.length }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+            Tổng thương hiệu
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- ===== FILTERS ===== -->
-    <div class="content-section">
-      <div class="search-filters">
-        <div class="search-box">
-          <span class="material-icons search-icon">search</span>
+    <!-- ===== FILTERS BAR ===== -->
+    <div
+      class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4">
+        <!-- Ô tìm kiếm -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1 uppercase"
+          >
+            <i class="material-icons text-sm">search</i>
+            Tìm kiếm
+          </label>
           <input
-            type="text"
-            class="search-input"
             v-model="searchKeyword"
-            placeholder="Tìm theo tên thương hiệu..."
+            type="text"
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="Tìm theo tên thương hiệu hoặc slug..."
           />
         </div>
 
-        <select class="filter-select" v-model="filterStatus">
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="inactive">Tạm ngưng</option>
-        </select>
-
-        <button class="btn btn-ghost" @click="resetFilters">
-          <span class="material-icons">refresh</span>
-          Làm mới
-        </button>
+        <!-- Ô trạng thái -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1 uppercase"
+          >
+            <i class="material-icons text-sm">category</i>
+            Trạng thái
+          </label>
+          <select
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            v-model="filterStatus"
+          >
+            <option value="all">Tất cả</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Tạm ngưng</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <!-- ===== LOADING STATE ===== -->
-    <div v-if="loading" class="admin-loading">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">Đang tải dữ liệu...</p>
+    <div
+      v-if="loading"
+      class="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div
+        class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+      ></div>
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Đang tải dữ liệu...
+      </p>
     </div>
 
     <!-- ===== EMPTY STATE ===== -->
-    <div v-else-if="filteredBrands.length === 0" class="admin-empty-state">
-      <div class="empty-state-icon">
-        <span class="material-icons">local_offer</span>
+    <div
+      v-else-if="filteredBrands.length === 0"
+      class="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div
+        class="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4"
+      >
+        <i class="material-icons text-purple-600 dark:text-purple-400 text-3xl"
+          >local_offer</i
+        >
       </div>
-      <h3 class="empty-state-title">Không có thương hiệu nào</h3>
-      <p class="empty-state-description">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        Không có thương hiệu nào
+      </h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">
         Bắt đầu thêm thương hiệu đầu tiên cho cửa hàng của bạn
       </p>
-      <button class="btn btn-primary" @click="openCreateModal">
-        <span class="material-icons">add</span>
+      <button
+        class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium"
+        @click="openCreateModal"
+      >
+        <i class="material-icons text-base">add</i>
         Thêm Thương hiệu
       </button>
     </div>
 
     <!-- ===== BRANDS TABLE ===== -->
-    <div v-else class="table-container">
-      <table class="admin-table brands-table">
-        <thead>
-          <tr>
-            <th style="width: 80px">ID</th>
-            <th style="width: 100px">Logo</th>
-            <th>Tên thương hiệu</th>
-            <th>Slug</th>
-            <th style="width: 200px">Website</th>
-            <th style="width: 150px">Trạng thái</th>
-            <th style="width: 180px">Ngày tạo</th>
-            <th style="width: 150px">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="brand in paginatedBrands" :key="brand.id">
-            <td>{{ brand.id }}</td>
-            <td>
-              <div class="brand-logo">
-                <img
-                  v-if="brand.logoUrl"
-                  :src="brand.logoUrl"
-                  :alt="brand.name"
-                  @error="handleImageError"
-                />
-                <div v-else class="logo-placeholder">
-                  <span class="material-icons">local_offer</span>
+    <div
+      v-if="!loading && filteredBrands.length > 0"
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead
+            class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600"
+          >
+            <tr>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[6%]"
+              >
+                ID
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[12%]"
+              >
+                Logo
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[20%]"
+              >
+                Tên thương hiệu
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[14%]"
+              >
+                Slug
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[16%]"
+              >
+                Website
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[18%]"
+              >
+                Trạng thái
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[14%]"
+              >
+                Ngày tạo
+              </th>
+              <th
+                class="px-4 py-3 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-[10%]"
+              >
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr
+              v-for="brand in paginatedBrands"
+              :key="brand.id"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+            >
+              <td
+                class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-center"
+              >
+                {{ brand.id }}
+              </td>
+
+              <!-- Logo -->
+              <td class="px-4 py-3">
+                <div
+                  class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden"
+                >
+                  <img
+                    v-if="brand.logoUrl"
+                    :src="brand.logoUrl"
+                    :alt="brand.name"
+                    @error="onLogoError($event)"
+                    class="w-full h-full object-contain"
+                  />
+                  <i
+                    v-else
+                    class="material-icons text-gray-400 dark:text-gray-500"
+                    >local_offer</i
+                  >
                 </div>
-              </div>
-            </td>
-            <td>
-              <div class="brand-info">
-                <strong>{{ brand.name }}</strong>
-                <p v-if="brand.description" class="brand-desc">
+              </td>
+
+              <!-- Tên + mô tả -->
+              <td class="px-4 py-3">
+                <div
+                  class="font-semibold text-sm text-gray-900 dark:text-gray-100"
+                >
+                  {{ brand.name }}
+                </div>
+                <p
+                  v-if="brand.description"
+                  class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+                >
                   {{ truncateText(brand.description, 50) }}
                 </p>
-              </div>
-            </td>
-            <td>
-              <code class="code-badge">{{ brand.slug }}</code>
-            </td>
-            <td>
-              <a
-                v-if="brand.websiteUrl"
-                :href="brand.websiteUrl"
-                target="_blank"
-                class="website-link"
-              >
-                <span class="material-icons">link</span>
-                {{ truncateText(brand.websiteUrl, 25) }}
-              </a>
-              <span v-else class="text-muted">—</span>
-            </td>
-            <td>
-              <span
-                class="status-badge"
-                :class="brand.isActive ? 'status-active' : 'status-inactive'"
-              >
-                <span class="material-icons">{{
-                  brand.isActive ? "check_circle" : "cancel"
-                }}</span>
-                {{ brand.isActive ? "Hoạt động" : "Tạm ngưng" }}
-              </span>
-            </td>
-            <td>{{ formatDate(brand.createdAt) }}</td>
-            <td>
-              <div class="cell-actions">
-                <button
-                  class="btn-icon btn-edit"
-                  @click="openEditModal(brand)"
-                  title="Chỉnh sửa"
+              </td>
+
+              <!-- Slug -->
+              <td class="px-4 py-3">
+                <code
+                  class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded font-mono"
+                  >{{ brand.slug }}</code
                 >
-                  <span class="material-icons">edit</span>
-                </button>
-                <button
-                  class="btn-icon btn-delete"
-                  @click="confirmDelete(brand)"
-                  title="Xóa"
+              </td>
+
+              <!-- Website -->
+              <td class="px-4 py-3">
+                <a
+                  v-if="brand.websiteUrl"
+                  :href="brand.websiteUrl"
+                  target="_blank"
+                  class="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                 >
-                  <span class="material-icons">delete</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  <i class="material-icons text-sm">link</i>
+                  {{ truncateText(brand.websiteUrl, 25) }}
+                </a>
+                <span v-else class="text-xs text-gray-400 dark:text-gray-500"
+                  >—</span
+                >
+              </td>
+
+              <!-- Trạng thái -->
+              <td class="px-4 py-3">
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full"
+                  :class="
+                    brand.isActive
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                  "
+                >
+                  <i class="material-icons text-sm">{{
+                    brand.isActive ? "check_circle" : "cancel"
+                  }}</i>
+                  {{ brand.isActive ? "Hoạt động" : "Tạm ngưng" }}
+                </span>
+              </td>
+
+              <!-- Ngày tạo -->
+              <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                {{ formatDate(brand.createdAt) }}
+              </td>
+
+              <!-- Thao tác -->
+              <td class="px-4 py-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button
+                    class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                    @click="openEditModal(brand)"
+                    title="Chỉnh sửa"
+                  >
+                    <i class="material-icons text-base">edit</i>
+                  </button>
+                  <button
+                    class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    @click="confirmDelete(brand)"
+                    title="Xóa"
+                  >
+                    <i class="material-icons text-base">delete</i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ===== PAGINATION ===== -->
-    <div v-if="totalPages > 1" class="table-pagination">
-      <button
-        class="pagination-btn"
-        :disabled="currentPage === 1"
-        @click="currentPage--"
-      >
-        <span class="material-icons">chevron_left</span>
-        Trước
-      </button>
+    <div
+      v-if="totalPages > 1"
+      class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div class="flex items-center gap-2">
+        <button
+          class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="currentPage === 1"
+          @click="currentPage--"
+        >
+          <i class="material-icons text-base">chevron_left</i>
+          Trước
+        </button>
 
-      <div class="pagination-info">
-        Trang {{ currentPage }} / {{ totalPages }}
+        <span class="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300"
+          >Trang {{ currentPage }} / {{ totalPages }}</span
+        >
+
+        <button
+          class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="currentPage === totalPages"
+          @click="currentPage++"
+        >
+          Sau
+          <i class="material-icons text-base">chevron_right</i>
+        </button>
       </div>
-
-      <button
-        class="pagination-btn"
-        :disabled="currentPage === totalPages"
-        @click="currentPage++"
-      >
-        Sau
-        <span class="material-icons">chevron_right</span>
-      </button>
     </div>
 
     <!-- ===== CREATE/EDIT MODAL ===== -->
-    <div v-if="showModal" class="modal-overlay" @click="closeModal">
-      <div class="modal modal-lg" @click.stop>
-        <div class="modal-header">
-          <h2 class="modal-title">
-            <span class="material-icons">{{
+    <div
+      v-if="showModal"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      @click="closeModal"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700"
+        @click.stop
+      >
+        <!-- Header -->
+        <div
+          class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700"
+        >
+          <h2
+            class="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+          >
+            <i class="material-icons text-purple-600 dark:text-purple-400">{{
               isEditMode ? "edit" : "add"
-            }}</span>
+            }}</i>
             {{ isEditMode ? "Chỉnh sửa Thương hiệu" : "Thêm Thương hiệu mới" }}
           </h2>
-          <button class="modal-close" @click="closeModal">
-            <span class="material-icons">close</span>
+          <button
+            class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            @click="closeModal"
+          >
+            <i class="material-icons text-xl">close</i>
           </button>
         </div>
 
-        <div class="modal-body">
-          <form @submit.prevent="saveBrand">
-            <div class="form-row">
-              <!-- 🔹 Tên thương hiệu -->
-              <div class="form-group">
-                <label class="form-label required">Tên thương hiệu</label>
+        <!-- Body -->
+        <div class="p-4">
+          <form @submit.prevent="saveBrand" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Tên thương hiệu -->
+              <div class="flex flex-col gap-2">
+                <label
+                  class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase"
+                  >Tên thương hiệu *</label
+                >
                 <input
                   v-model="formData.name"
                   type="text"
-                  class="form-control"
+                  class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="VD: Nike, Adidas..."
                   @input="generateSlug"
                   required
                 />
-                <span v-if="formErrors?.name" class="form-error">{{
-                  formErrors.name
-                }}</span>
               </div>
 
-              <!-- 🔹 Slug -->
-              <div class="form-group">
-                <label class="form-label required">Slug</label>
+              <!-- Slug -->
+              <div class="flex flex-col gap-2">
+                <label
+                  class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase"
+                  >Slug *</label
+                >
                 <input
                   v-model="formData.slug"
                   type="text"
-                  class="form-control"
+                  class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   placeholder="vd: nike, adidas..."
                   required
                 />
-                <span v-if="formErrors?.slug" class="form-error">{{
-                  formErrors.slug
-                }}</span>
-                <span class="form-help"
-                  >URL thân thiện (tự động tạo từ tên)</span
-                >
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">URL Logo</label>
+            <!-- Logo -->
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase"
+                >URL Logo</label
+              >
               <input
-                type="url"
-                class="form-control"
                 v-model="formData.logoUrl"
-                placeholder="/placeholder-image.png"
+                type="url"
+                class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="https://example.com/logo.png"
               />
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Website</label>
+            <!-- Website -->
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase"
+                >Website</label
+              >
               <input
-                type="url"
-                class="form-control"
                 v-model="formData.websiteUrl"
+                type="url"
+                class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="https://example.com"
               />
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Mô tả</label>
+            <!-- Mô tả -->
+            <div class="flex flex-col gap-2">
+              <label
+                class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase"
+                >Mô tả</label
+              >
               <textarea
-                class="form-control"
+                class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 v-model="formData.description"
                 placeholder="Nhập mô tả về thương hiệu..."
-                rows="4"
+                rows="3"
               ></textarea>
             </div>
 
-            <div class="form-check">
+            <!-- Kích hoạt -->
+            <div class="flex items-center gap-2">
               <input
                 type="checkbox"
-                class="form-check-input"
-                v-model="formData.isActive"
                 id="isActive"
+                v-model="formData.isActive"
+                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
               />
-              <label class="form-check-label" for="isActive">
+              <label
+                for="isActive"
+                class="text-sm text-gray-700 dark:text-gray-300"
+              >
                 Kích hoạt thương hiệu
               </label>
             </div>
 
-            <div class="form-actions right">
-              <button type="button" class="btn btn-outline" @click="closeModal">
-                <span class="material-icons">close</span>
+            <!-- Nút hành động -->
+            <div
+              class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700"
+            >
+              <button
+                type="button"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                @click="closeModal"
+              >
+                <i class="material-icons text-base">close</i>
                 Hủy
               </button>
               <button
                 type="submit"
-                class="btn btn-primary"
-                :class="{ 'btn-loading': saving }"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="saving"
               >
-                <span class="material-icons">{{
-                  saving ? "hourglass_empty" : "save"
-                }}</span>
+                <i
+                  class="material-icons text-base"
+                  :class="{ 'animate-spin': saving }"
+                  >{{ saving ? "hourglass_empty" : "save" }}</i
+                >
                 {{ saving ? "Đang lưu..." : "Lưu" }}
               </button>
             </div>
@@ -348,9 +549,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { ElMessage } from "element-plus";
 import { useAdminStore } from "@/stores/admin";
+import notificationService from "@/utils/notificationService";
 import ConfirmDialog from "@/assets/components/common/ConfirmDialog.vue";
+import logger from "@/utils/logger";
+import { formatDate } from "@/utils/formatters";
 
 const adminStore = useAdminStore();
 
@@ -427,12 +630,8 @@ const fetchBrands = async () => {
     const result = await adminStore.fetchBrands();
     brands.value = result.content || result || [];
   } catch (error) {
-    console.error("Error fetching brands:", error);
-    // alert("Lỗi khi tải danh sách thương hiệu");
-    ElMessage.error({
-      message: "Lỗi khi tải danh sách thương hiệu",
-      duration: 3000,
-    });
+    logger.error("Error fetching brands:", error);
+    notificationService.apiError(error, "Lỗi khi tải danh sách thương hiệu");
   } finally {
     loading.value = false;
   }
@@ -494,19 +693,14 @@ const saveBrand = async () => {
     await fetchBrands();
     closeModal();
     // alert(`${isEditMode.value ? "Cập nhật" : "Thêm"} thương hiệu thành công!`);
-    ElMessage.success({
-      message: `${
-        isEditMode.value ? "Cập nhật" : "Thêm"
-      } thương hiệu thành công!`,
-      duration: 3000,
-    });
+    notificationService.success(
+      "Thành công",
+      `${isEditMode.value ? "Cập nhật" : "Thêm"} thương hiệu thành công!`,
+      { duration: 3000 }
+    );
   } catch (error) {
-    console.error("Error saving brand:", error);
-    // alert("Lỗi khi lưu thương hiệu");
-    ElMessage.error({
-      message: "Lỗi khi lưu thương hiệu",
-      duration: 3000,
-    });
+    logger.error("Error saving brand:", error);
+    notificationService.apiError(error, "Lỗi khi lưu thương hiệu");
   } finally {
     saving.value = false;
   }
@@ -525,32 +719,26 @@ const deleteBrand = async () => {
     showDeleteModal.value = false;
     brandToDelete.value = null;
     // alert("Xóa thương hiệu thành công!");
-    ElMessage.success({
-      message: "Xóa thương hiệu thành công!",
+    notificationService.success("Thành công", "Xóa thương hiệu thành công!", {
       duration: 3000,
     });
   } catch (error) {
-    console.error("Error deleting brand:", error);
-    // alert("Lỗi khi xóa thương hiệu");
-    ElMessage.error({
-      message: "Lỗi khi xóa thương hiệu",
-      duration: 3000,
-    });
+    logger.error("Error deleting brand:", error);
+    notificationService.apiError(error, "Lỗi khi xóa thương hiệu");
   } finally {
     deleting.value = false;
   }
+};
+
+const onLogoError = (e) => {
+  e.target.src = "/brand-default.png"; // ảnh local
+  e.target.onerror = null; // tránh lặp vô hạn
 };
 
 const resetFilters = () => {
   searchKeyword.value = "";
   filterStatus.value = "all";
   currentPage.value = 1;
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return "—";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("vi-VN");
 };
 
 const truncateText = (text, maxLength) => {
@@ -567,86 +755,3 @@ onMounted(() => {
   fetchBrands();
 });
 </script>
-
-<style scoped>
-/* ═══════════════════════════════════════════════════════════════════
-   VIEW-SPECIFIC STYLES ONLY
-   All common styles (buttons, forms, tables, modals) use Design System v2.0
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* Brand Logo */
-.brand-logo {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--dark-bg-glass-light);
-  border: 1px solid var(--dark-border-primary);
-}
-
-.brand-logo img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.logo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  font-size: 1.5rem;
-}
-
-/* Brand Info */
-.brand-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.brand-info strong {
-  color: var(--text-primary);
-  font-size: var(--text-sm);
-}
-
-.brand-desc {
-  color: var(--text-tertiary);
-  font-size: var(--text-xs);
-  margin: 0;
-}
-
-/* Code Badge */
-.code-badge {
-  background: rgba(167, 139, 250, 0.1);
-  color: var(--primary-light);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  border: 1px solid rgba(167, 139, 250, 0.2);
-}
-
-/* Website Link */
-.website-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--primary-light);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  transition: var(--transition-fast);
-}
-
-.website-link:hover {
-  color: var(--primary-color);
-  text-decoration: underline;
-}
-
-.website-link .material-icons {
-  font-size: 16px;
-}
-</style>

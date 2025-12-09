@@ -3,6 +3,7 @@ package com.sneakery.store.controller;
 import com.sneakery.store.dto.LoyaltyDto;
 import com.sneakery.store.entity.LoyaltyPoint;
 import com.sneakery.store.entity.User;
+import com.sneakery.store.exception.UserNotFoundException;
 import com.sneakery.store.repository.LoyaltyPointRepository;
 import com.sneakery.store.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +14,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Admin Loyalty Controller
@@ -27,11 +30,12 @@ import java.util.Map;
 @RequestMapping("/api/admin/loyalty")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class AdminLoyaltyController {
 
     private final LoyaltyPointRepository loyaltyPointRepository;
     private final UserRepository userRepository;
+    private final com.sneakery.store.service.LoyaltyService loyaltyService;
     
     /**
      * Map LoyaltyPoint entity to LoyaltyDto to avoid Hibernate proxy issues
@@ -55,6 +59,7 @@ public class AdminLoyaltyController {
      * Lấy danh sách users với loyalty points
      */
     @GetMapping("/users")
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<LoyaltyDto>> getLoyaltyUsers(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size
@@ -62,9 +67,9 @@ public class AdminLoyaltyController {
         log.info("⭐ Fetching loyalty users - page: {}, size: {}", page, size);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<LoyaltyPoint> points = loyaltyPointRepository.findAll(pageable);
+        Page<LoyaltyPoint> points = loyaltyPointRepository.findAllWithUser(pageable);
         
-        // Map to DTO
+        // Map to DTO - User đã được load cùng lúc nhờ JOIN FETCH
         Page<LoyaltyDto> dtoPage = points.map(this::mapToDto);
         
         return ResponseEntity.ok(dtoPage);
@@ -89,10 +94,29 @@ public class AdminLoyaltyController {
     }
 
     /**
+     * GET /api/admin/loyalty/users/{userId}/balance
+     * Lấy loyalty points balance của user
+     */
+    @GetMapping("/users/{userId}/balance")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getUserBalance(@PathVariable Long userId) {
+        log.info("⭐ Fetching loyalty balance for user {}", userId);
+        
+        int balance = loyaltyService.getUserPointsBalance(userId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", userId);
+        response.put("balance", balance);
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * POST /api/admin/loyalty/users/{userId}/adjust
      * Điều chỉnh loyalty points cho user
      */
     @PostMapping("/users/{userId}/adjust")
+    @Transactional
     public ResponseEntity<LoyaltyDto> adjustUserPoints(
         @PathVariable Long userId,
         @RequestBody Map<String, Object> request
@@ -102,8 +126,8 @@ public class AdminLoyaltyController {
         
         log.info("⭐ Adjusting loyalty points for user {}: {} points", userId, points);
         
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        User user = userRepository.findById(Objects.requireNonNull(userId))
+            .orElseThrow(() -> new UserNotFoundException(userId));
         
         LoyaltyPoint loyaltyPoint = new LoyaltyPoint();
         loyaltyPoint.setUser(user);

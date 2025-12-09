@@ -1,5 +1,6 @@
 package com.sneakery.store.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +33,18 @@ public class AdminProductRequestDto {
 
     @Schema(description = "ID loại đế giày của sản phẩm", example = "3")
     private Integer shoeSoleId;
+
+//    @Schema(description = "Ảnh bìa chính của sản phẩm (URL hiển thị đại diện)")
+//    @JsonInclude(JsonInclude.Include.NON_NULL)
+//    private String mainImageUrl;
+
+    @Schema(description = "Giá từ (VNĐ)", example = "1000000")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer priceFrom;
+
+    @Schema(description = "Giá đến (VNĐ)", example = "5000000")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer priceTo;
 
     // Danh sách các ID của Category
     @NotEmpty(message = "Sản phẩm phải thuộc ít nhất 1 danh mục")

@@ -16,6 +16,7 @@ import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Service xử lý logic cho Coupon
@@ -32,7 +33,7 @@ public class CouponService {
     @Transactional(readOnly = true)
     public Page<CouponDto> getAllCoupons(String search, String type, String status, Pageable pageable) {
         Specification<Coupon> spec = buildSpecification(search, type, status);
-        Page<Coupon> coupons = couponRepository.findAll(spec, pageable);
+        Page<Coupon> coupons = couponRepository.findAll(spec, Objects.requireNonNull(pageable));
         return coupons.map(this::convertToDto);
     }
 
@@ -72,7 +73,7 @@ public class CouponService {
      */
     @Transactional(readOnly = true)
     public CouponDto getCouponById(Integer id) {
-        Coupon coupon = couponRepository.findById(id)
+        Coupon coupon = couponRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy coupon"));
         return convertToDto(coupon);
     }
@@ -93,7 +94,7 @@ public class CouponService {
         }
 
         Coupon coupon = convertToEntity(dto);
-        coupon = couponRepository.save(coupon);
+        coupon = couponRepository.save(Objects.requireNonNull(coupon));
         return convertToDto(coupon);
     }
 
@@ -102,7 +103,7 @@ public class CouponService {
      */
     @Transactional
     public CouponDto updateCoupon(Integer id, CouponDto dto) {
-        Coupon coupon = couponRepository.findById(id)
+        Coupon coupon = couponRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy coupon"));
 
         // Validate dates
@@ -131,7 +132,7 @@ public class CouponService {
      */
     @Transactional
     public void deleteCoupon(Integer id) {
-        Coupon coupon = couponRepository.findById(id)
+        Coupon coupon = couponRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy coupon"));
         
         // Kiểm tra coupon đã được sử dụng chưa
@@ -139,7 +140,7 @@ public class CouponService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Không thể xóa coupon đã được sử dụng");
         }
 
-        couponRepository.delete(coupon);
+        couponRepository.delete(Objects.requireNonNull(coupon));
     }
 
     /**
@@ -147,7 +148,7 @@ public class CouponService {
      */
     @Transactional
     public CouponDto toggleStatus(Integer id) {
-        Coupon coupon = couponRepository.findById(id)
+        Coupon coupon = couponRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy coupon"));
         
         coupon.setIsActive(!coupon.getIsActive());
@@ -184,6 +185,47 @@ public class CouponService {
         }
 
         return convertToDto(coupon);
+    }
+
+    /**
+     * Lấy danh sách coupons đang hoạt động (cho user chọn)
+     */
+    @Transactional(readOnly = true)
+    public List<CouponDto> getActiveCoupons() {
+        LocalDateTime now = LocalDateTime.now();
+        
+        Specification<Coupon> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // Chỉ lấy coupons đang active
+            predicates.add(cb.equal(root.get("isActive"), true));
+            
+            // Đã bắt đầu (startAt <= now)
+            predicates.add(cb.lessThanOrEqualTo(root.get("startAt"), now));
+            
+            // Chưa hết hạn (endAt >= now)
+            predicates.add(cb.greaterThanOrEqualTo(root.get("endAt"), now));
+            
+            // Chưa hết lượt dùng (maxUses IS NULL OR usesCount < maxUses)
+            Predicate maxUsesNull = cb.isNull(root.get("maxUses"));
+            Predicate usesCountLessThanMax = cb.and(
+                cb.isNotNull(root.get("maxUses")),
+                cb.lessThan(root.get("usesCount"), root.get("maxUses"))
+            );
+            predicates.add(cb.or(maxUsesNull, usesCountLessThanMax));
+            
+            // Sắp xếp theo endAt ASC (sắp hết hạn trước)
+            if (query != null) {
+                query.orderBy(cb.asc(root.get("endAt")));
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        List<Coupon> coupons = couponRepository.findAll(spec);
+        return coupons.stream()
+                .map(this::convertToDto)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

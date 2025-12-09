@@ -1,6 +1,6 @@
 <template>
-  <div v-if="modelValue" class="modal-overlay" @click="handleCancel">
-    <div class="confirm-dialog" :class="`confirm-dialog-${type}`" @click.stop>
+  <div v-if="modelValue" class="modal-overlay" @click="handleCancel" @keydown.esc="handleCancel">
+    <div ref="dialogRef" class="confirm-dialog" :class="`confirm-dialog-${type}`" @click.stop role="dialog" :aria-modal="true" :aria-labelledby="titleId">
       <!-- Icon -->
       <div class="dialog-icon" :class="`icon-${type}`">
         <i class="material-icons">{{ iconName }}</i>
@@ -8,7 +8,7 @@
 
       <!-- Content -->
       <div class="dialog-content">
-        <h3 class="dialog-title">{{ title }}</h3>
+        <h3 :id="titleId" class="dialog-title">{{ title }}</h3>
         <p class="dialog-message">{{ message }}</p>
         <p v-if="description" class="dialog-description">{{ description }}</p>
       </div>
@@ -37,7 +37,8 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { useFocusManagement } from "@/composables/useFocusManagement";
 
 const props = defineProps({
   modelValue: {
@@ -78,6 +79,33 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "confirm", "cancel"]);
 
+// Focus management
+const dialogRef = ref(null);
+const { setupModalFocus, cleanupModalFocus, saveActiveElement } = useFocusManagement();
+const titleId = computed(() => `confirm-dialog-title-${Math.random().toString(36).substr(2, 9)}`);
+
+// Setup focus when modal opens
+watch(() => props.modelValue, (isOpen) => {
+  if (isOpen) {
+    saveActiveElement();
+    nextTick(() => {
+      if (dialogRef.value) {
+        setupModalFocus(dialogRef.value);
+      }
+    });
+  } else {
+    if (dialogRef.value) {
+      cleanupModalFocus(dialogRef.value);
+    }
+  }
+});
+
+onUnmounted(() => {
+  if (dialogRef.value) {
+    cleanupModalFocus(dialogRef.value);
+  }
+});
+
 const iconName = computed(() => {
   const icons = {
     warning: "warning",
@@ -113,178 +141,184 @@ const handleCancel = () => {
 </script>
 
 <style scoped>
-/* ===== MODAL OVERLAY ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 15, 25, 0.45); /* mềm và sáng hơn */
-  backdrop-filter: blur(8px) saturate(160%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
   z-index: 9999;
-  animation: fadeIn 0.25s ease-out;
-}
-
-/* ===== CONFIRM DIALOG ===== */
-.confirm-dialog {
-  background: var(--surface, #fff);
-  border-radius: 18px;
-  padding: 2rem;
-  max-width: 440px;
-  width: 92%;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-  text-align: center;
-  transform: translateY(20px) scale(0.98);
-  animation: dialogPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transition: all 0.3s ease;
-}
-
-/* ===== DIALOG ICON ===== */
-.dialog-icon {
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  box-shadow: 0 0 15px rgba(255, 80, 80, 0.4);
-  transform: scale(1);
-  animation: iconPulse 1.2s ease-in-out infinite alternate;
+  padding: 1rem;
 }
 
-.icon-danger {
-  background: linear-gradient(145deg, #ff4444, #d92626);
-}
-
-.icon-warning {
-  background: linear-gradient(145deg, #f59e0b, #f97316);
-}
-
-.icon-info {
-  background: linear-gradient(145deg, #3b82f6, #2563eb);
-}
-
-.icon-success {
-  background: linear-gradient(145deg, #10b981, #059669);
-}
-
-/* ===== CONTENT ===== */
-.dialog-content {
-  margin-bottom: 1.75rem;
-}
-
-.dialog-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 0.5rem;
-}
-
-.dialog-message {
-  font-size: 1rem;
-  color: #555;
-  line-height: 1.5;
-}
-
-.dialog-description {
-  font-size: 0.9rem;
-  color: #888;
-  font-style: italic;
-  margin-top: 0.5rem;
-}
-
-/* ===== BUTTONS ===== */
-.dialog-actions {
+.confirm-dialog {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 28rem;
+  width: 100%;
+  padding: 1.5rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   gap: 1rem;
 }
 
-.dialog-actions .btn {
-  min-width: 120px;
-  height: 46px;
-  border-radius: 10px;
+.dark .confirm-dialog {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.dialog-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.dialog-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.icon-warning {
+  background: #f59e0b;
+}
+
+.icon-danger {
+  background: #ef4444;
+}
+
+.icon-info {
+  background: #3b82f6;
+}
+
+.icon-success {
+  background: #10b981;
+}
+
+.dialog-content {
+  text-align: center;
+}
+
+.dialog-title {
+  font-size: 1.25rem;
   font-weight: 600;
-  transition: all 0.25s ease;
+  margin-bottom: 0.5rem;
+  color: #111827;
 }
 
-.btn-danger {
-  background: linear-gradient(135deg, #ff4d4d, #d92626);
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(255, 77, 77, 0.4);
+.dark .dialog-title {
+  color: #f9fafb;
 }
 
-.btn-danger:hover {
-  background: linear-gradient(135deg, #ff5f5f, #e13a3a);
-  box-shadow: 0 0 14px rgba(255, 90, 90, 0.55);
-  transform: translateY(-2px);
+.dialog-message {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.dark .dialog-message {
+  color: #d1d5db;
+}
+
+.dialog-description {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.dark .dialog-description {
+  color: #9ca3af;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: #f4f4f4;
-  color: #333;
+  background: #f3f4f6;
+  color: #374151;
 }
 
-.btn-secondary:hover {
-  background: #e9e9e9;
-  color: #000;
-  transform: translateY(-2px);
+.dark .btn-secondary {
+  background: #374151;
+  color: #f9fafb;
 }
 
-/* ===== ANIMATIONS ===== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.btn-primary {
+  background: #6366f1;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-loading {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
   to {
-    opacity: 1;
-  }
-}
-
-@keyframes dialogPop {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes iconPulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
-  }
-  100% {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(255, 77, 77, 0.6);
-  }
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 640px) {
-  .confirm-dialog {
-    max-width: 94%;
-    padding: 1.5rem;
-  }
-
-  .dialog-icon {
-    width: 68px;
-    height: 68px;
-    font-size: 30px;
-  }
-
-  .dialog-actions {
-    flex-direction: column;
-  }
-
-  .dialog-actions .btn {
-    width: 100%;
+    transform: rotate(360deg);
   }
 }
 </style>
+

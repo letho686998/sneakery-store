@@ -20,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return Optional chứa User nếu tìm thấy
      */
     Optional<User> findByEmail(String email);
-
+    Optional<User> findByEmailIgnoreCase(String email);
     /**
      * Kiểm tra nhanh xem email đã tồn tại trong CSDL chưa.
      * Tối ưu hơn việc dùng findByEmail().isPresent()
@@ -42,11 +42,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(u.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:role IS NULL OR :role = '' OR u.role = :role) " +
-            "AND (:isActive IS NULL OR u.isActive = :isActive)")
+            "AND (:isActive IS NULL OR u.isActive = :isActive) " +
+            "AND (u.deletedAt IS NULL)")
     Page<User> findAllWithFilters(
             @Param("search") String search,
             @Param("role") String role,
             @Param("isActive") Boolean isActive,
             Pageable pageable
+    );
+
+    /**
+     * Đếm số lượng users được tạo trong khoảng thời gian
+     */
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt BETWEEN :startDate AND :endDate")
+    long countByCreatedAtBetween(
+            @Param("startDate") java.time.LocalDateTime startDate,
+            @Param("endDate") java.time.LocalDateTime endDate
     );
 }

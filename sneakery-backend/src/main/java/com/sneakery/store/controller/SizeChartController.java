@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/size-charts")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class SizeChartController {
 
     private final SizeChartRepository sizeChartRepository;
@@ -59,7 +60,7 @@ public class SizeChartController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<SizeChartDto> getSizeChartById(@PathVariable Integer id) {
-        SizeChart sizeChart = sizeChartRepository.findById(id)
+        SizeChart sizeChart = sizeChartRepository.findById(Objects.requireNonNull(id))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Size chart không tồn tại"));
         
         return ResponseEntity.ok(convertToDto(sizeChart));

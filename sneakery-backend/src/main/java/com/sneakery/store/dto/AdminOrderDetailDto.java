@@ -1,5 +1,6 @@
 package com.sneakery.store.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -10,21 +11,41 @@ import java.util.List;
 @Builder
 public class AdminOrderDetailDto {
     private Long id;
+    private String orderNumber;
     private String status;
+
+    // 💰 Thông tin giá
+    private BigDecimal subtotal;
+    private BigDecimal discountAmount;
+    private String couponCode;
+    private BigDecimal shippingFee;
+    private BigDecimal taxAmount;
+    private Integer pointsUsed;
+    @Schema(description = "Điểm thưởng hiện tại còn lại của khách hàng")
+    private Integer customerPointBalance;
+    private BigDecimal pointsDiscount;
     private BigDecimal totalAmount;
+
     private LocalDateTime createdAt;
-    
-    // Thông tin khách hàng
+
+    // 👤 Customer
     private Long userId;
     private String customerName;
     private String customerEmail;
-    
-    // Địa chỉ
+
+    // 🏠 Address
     private AddressDto addressShipping;
     private AddressDto addressBilling;
-    
-    // Chi tiết
+
+    // 💳 Payment
     private PaymentDto payment;
+
+    // 📦 Items
     private List<CartItemDto> orderDetails;
+
+    // 🕒 Status history
     private List<OrderStatusHistoryDto> statusHistories;
+
+    // 🔁 Return Request
+    private ReturnRequestDto returnRequest;
 }

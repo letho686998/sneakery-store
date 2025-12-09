@@ -1,63 +1,101 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { adminGuard } from './adminRoutes';
-import { userGuard } from './userRoutes';
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { adminGuard } from "./adminRoutes";
+import { userGuard } from "./userRoutes";
 
-// Import layouts
-import DefaultLayout from '../assets/layouts/DefaultLayout.vue';
+// Import layouts (lazy load)
+const DefaultLayout = () => import("../assets/layouts/DefaultLayout.vue");
 
-// Import các trang của bạn
-import HomePage from '../views/common/HomePage.vue';
-import LoginPage from '../views/common/LoginPage.vue';
-import RegisterPage from '../views/common/RegisterPage.vue';
-
+// Import các trang của bạn (lazy load)
+const HomePage = () => import("../views/common/HomePage.vue");
+const LoginPage = () => import("../views/common/LoginPage.vue");
+const RegisterPage = () => import("../views/common/RegisterPage.vue");
+const ForgotPassword = () => import("../views/common/ForgotPassword.vue");
+const ResetPassWord = () => import("../views/common/ResetPassWord.vue");
 // Import admin & user routes
-import adminRoutes from './adminRoutes';
-import userRoutes from './userRoutes';
+import adminRoutes from "./adminRoutes";
+import userRoutes from "./userRoutes";
 
 const routes = [
-  // Default route - redirect to login
+  // Default route - redirect to home
   {
-    path: '/',
-    redirect: '/login'
+    path: "/",
+    redirect: "/home",
   },
   // Routes với DefaultLayout (Public pages)
   {
-    path: '/home',
+    path: "/home",
     component: DefaultLayout,
     children: [
       {
-        path: '',
-        name: 'home',
+        path: "",
+        name: "home",
         component: HomePage,
       },
       {
-        path: 'products',
-        name: 'products',
-        component: () => import('../views/common/ProductListPage.vue'),
+        path: "products",
+        name: "products",
+        component: () => import("../views/common/ProductListPage.vue"),
       },
       {
-        path: 'products/:id',
-        name: 'product-detail',
-        component: () => import('../views/common/ProductDetailPage.vue'),
+        path: "products/:slug",
+        name: "product-detail",
+        component: () => import("../views/common/ProductDetailPage.vue").catch(() => {
+          // Fallback nếu import thất bại
+          return import("../views/common/ProductListPage.vue");
+        }),
       },
-    ]
+      {
+        path: "flash-sale",
+        name: "flash-sale",
+        component: () => import("../views/common/FlashSalePage.vue"),
+      },
+      {
+        path: "reviews",
+        name: "reviews",
+        component: () => import("../views/common/ReviewsPage.vue"),
+      },
+    ],
   },
   // Auth pages (no layout)
   {
-    path: '/login',
-    name: 'login',
+    path: "/login",
+    name: "login",
     component: LoginPage,
   },
   {
-    path: '/register',
-    name: 'register',
+    path: "/register",
+    name: "register",
     component: RegisterPage,
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: ForgotPassword,
+  },
+  {
+    path: "/reset-password",
+    name: "reset-password",
+    component: ResetPassWord,
+  },
+  // Cart and Checkout pages (Public - Cho phép cả guest và authenticated users)
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: () => import('../views/user/CartPage.vue'),
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('../views/user/CheckoutPage.vue').catch(() => {
+      // Fallback nếu import thất bại
+      return import('../views/user/CartPage.vue');
+    }),
   },
   // User routes (Protected - chỉ dành cho user đã đăng nhập)
   ...userRoutes,
   // Admin routes (Protected - chỉ dành cho admin)
-  ...adminRoutes
+  ...adminRoutes,
 ];
 
 const router = createRouter({
@@ -88,36 +126,31 @@ router.beforeEach(async (to, from, next) => {
 
   // ====== 3. KIỂM TRA LOGIN/REGISTER ======
   // Nếu đã đăng nhập mà vào login/register → redirect về dashboard tương ứng
-  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+  if (
+    (to.name === "login" || to.name === "register") &&
+    authStore.isAuthenticated
+  ) {
     const user = authStore.currentUser;
-    if (user && (user.role === 'ADMIN' || user.role === 'MODERATOR')) {
-      next({ path: '/admin/dashboard' });
+    if (user && (user.role === "ADMIN" || user.role === "MODERATOR")) {
+      next({ path: "/admin/dashboard" });
     } else {
-      next({ path: '/user/dashboard' });
+      next({ path: "/user/dashboard" });
     }
     return;
   }
 
   // ====== 3.1. KIỂM TRA TRANG HOME ======
-  // Nếu đã đăng nhập mà vào trang home → redirect về dashboard tương ứng
-  if (to.name === 'home' && authStore.isAuthenticated) {
-    const user = authStore.currentUser;
-    if (user && (user.role === 'ADMIN' || user.role === 'MODERATOR')) {
-      next({ path: '/admin/dashboard' });
-    } else {
-      next({ path: '/user/dashboard' });
-    }
-    return;
-  } 
+  // Cho phép vào trang home bất kể đã đăng nhập hay chưa
+  // (Đã bỏ redirect tự động về dashboard để user có thể xem trang home)
 
   // ====== 4. KIỂM TRA CÁC ROUTES CHUNG CẦN ĐĂNG NHẬP ======
   if (requiresAuth && !authStore.isAuthenticated) {
     // Chưa đăng nhập → redirect về login
-    next({ 
-      path: '/login',
-      query: { redirect: to.fullPath }
+    next({
+      path: "/login",
+      query: { redirect: to.fullPath },
     });
-  } 
+  }
   // ====== 5. CÁC TRƯỜNG HỢP KHÁC (PUBLIC PAGES) → CHO PHÉP ======
   else {
     next();

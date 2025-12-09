@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { parseAdminError } from '@/utils/adminErrorHandler'
 
 // Sử dụng relative path để Vite proxy có thể forward requests
 const API_BASE_URL = '/api/admin'
@@ -11,6 +12,9 @@ const adminApi = axios.create({
     'Content-Type': 'application/json'
   }
 })
+
+// Store for cancel tokens to enable request cancellation
+const cancelTokenSources = new Map()
 
 // Request interceptor để thêm JWT token
 adminApi.interceptors.request.use(
@@ -79,9 +83,85 @@ class AdminService {
     }
   }
 
-  // ===== PRODUCT MANAGEMENT =====
-  async getProducts(page = 0, size = 10, filters = {}) {
+  async getOrderStatusAnalytics() {
     try {
+      const response = await adminApi.get('/analytics/order-status')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getTopProducts(period = '30d') {
+    try {
+      const response = await adminApi.get(`/analytics/products?period=${period}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getRecentActivities(limit = 10) {
+    try {
+      const response = await adminApi.get(`/analytics/recent-activities?limit=${limit}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getConversionRate() {
+    try {
+      const response = await adminApi.get('/analytics/conversion-rate')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getDashboardBadges() {
+    try {
+      const response = await adminApi.get('/dashboard/badges')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async clearDashboardCache() {
+    try {
+      const response = await adminApi.post('/dashboard/stats/clear-cache')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getStatsCompare(period = '30d') {
+    try {
+      const response = await adminApi.get(`/analytics/stats-compare?period=${period}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  // ===== PRODUCT MANAGEMENT =====
+  async getProducts(page = 0, size = 10, filters = {}, cancelToken = null) {
+    try {
+      // Cancel previous request if exists
+      const requestKey = 'getProducts'
+      if (cancelTokenSources.has(requestKey)) {
+        cancelTokenSources.get(requestKey).cancel('New request made')
+        cancelTokenSources.delete(requestKey)
+      }
+
+      // Create new cancel token if not provided
+      const source = cancelToken || axios.CancelToken.source()
+      if (!cancelToken) {
+        cancelTokenSources.set(requestKey, source)
+      }
+
       // Lọc bỏ các giá trị undefined/null/empty để tránh gửi "undefined" trong URL
       const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -95,9 +175,20 @@ class AdminService {
         size: size.toString(),
         ...cleanFilters
       })
-      const response = await adminApi.get(`/products?${params}`)
+      const response = await adminApi.get(`/products?${params}`, {
+        cancelToken: source.token
+      })
+      
+      // Remove cancel token after successful request
+      if (!cancelToken) {
+        cancelTokenSources.delete(requestKey)
+      }
+      
       return response.data
     } catch (error) {
+      if (axios.isCancel(error)) {
+        throw { message: 'Request cancelled', isCancelled: true }
+      }
       throw this.handleError(error)
     }
   }
@@ -209,8 +300,21 @@ class AdminService {
   }
 
   // ===== ORDER MANAGEMENT =====
-  async getOrders(page = 0, size = 10, filters = {}) {
+  async getOrders(page = 0, size = 10, filters = {}, cancelToken = null) {
     try {
+      // Cancel previous request if exists
+      const requestKey = 'getOrders'
+      if (cancelTokenSources.has(requestKey)) {
+        cancelTokenSources.get(requestKey).cancel('New request made')
+        cancelTokenSources.delete(requestKey)
+      }
+
+      // Create new cancel token if not provided
+      const source = cancelToken || axios.CancelToken.source()
+      if (!cancelToken) {
+        cancelTokenSources.set(requestKey, source)
+      }
+
       // Lọc bỏ các giá trị undefined/null/empty để tránh gửi "undefined" trong URL
       const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -224,9 +328,20 @@ class AdminService {
         size: size.toString(),
         ...cleanFilters
       })
-      const response = await adminApi.get(`/orders?${params}`)
+      const response = await adminApi.get(`/orders?${params}`, {
+        cancelToken: source.token
+      })
+      
+      // Remove cancel token after successful request
+      if (!cancelToken) {
+        cancelTokenSources.delete(requestKey)
+      }
+      
       return response.data
     } catch (error) {
+      if (axios.isCancel(error)) {
+        throw { message: 'Request cancelled', isCancelled: true }
+      }
       throw this.handleError(error)
     }
   }
@@ -249,9 +364,31 @@ class AdminService {
     }
   }
 
-  // ===== USER MANAGEMENT =====
-  async getUsers(page = 0, size = 10, filters = {}) {
+  async getOrderStatusHistory(orderId) {
     try {
+      const response = await adminApi.get(`/orders/${orderId}/status-history`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  // ===== USER MANAGEMENT =====
+  async getUsers(page = 0, size = 10, filters = {}, cancelToken = null) {
+    try {
+      // Cancel previous request if exists
+      const requestKey = 'getUsers'
+      if (cancelTokenSources.has(requestKey)) {
+        cancelTokenSources.get(requestKey).cancel('New request made')
+        cancelTokenSources.delete(requestKey)
+      }
+
+      // Create new cancel token if not provided
+      const source = cancelToken || axios.CancelToken.source()
+      if (!cancelToken) {
+        cancelTokenSources.set(requestKey, source)
+      }
+
       // Lọc bỏ các giá trị undefined/null/empty để tránh gửi "undefined" trong URL
       const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -265,9 +402,20 @@ class AdminService {
         size: size.toString(),
         ...cleanFilters
       })
-      const response = await adminApi.get(`/users?${params}`)
+      const response = await adminApi.get(`/users?${params}`, {
+        cancelToken: source.token
+      })
+      
+      // Remove cancel token after successful request
+      if (!cancelToken) {
+        cancelTokenSources.delete(requestKey)
+      }
+      
       return response.data
     } catch (error) {
+      if (axios.isCancel(error)) {
+        throw { message: 'Request cancelled', isCancelled: true }
+      }
       throw this.handleError(error)
     }
   }
@@ -293,6 +441,24 @@ class AdminService {
   async updateUserRole(id, role) {
     try {
       const response = await adminApi.put(`/users/${id}/role`, { role })
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async createUser(userData) {
+    try {
+      const response = await adminApi.post('/users', userData)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async deleteUser(id) {
+    try {
+      const response = await adminApi.delete(`/users/${id}`)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -605,6 +771,72 @@ class AdminService {
     }
   }
 
+  // ===== RETURN REQUEST ACTIONS (Approve / Reject / Complete) =====
+
+/**
+ * Duyệt yêu cầu đổi trả
+ */
+async approveReturn(id, adminNote = '') {
+  try {
+    const response = await adminApi.put(`/returns/${id}/status`, {
+      status: 'approved',
+      adminNote
+    });
+    return response.data;
+  } catch (error) {
+    throw this.handleError(error);
+  }
+}
+
+/**
+ * Từ chối yêu cầu đổi trả
+ */
+async rejectReturn(id, adminNote = '') {
+  try {
+    const response = await adminApi.put(`/returns/${id}/status`, {
+      status: 'rejected',
+      adminNote
+    });
+    return response.data;
+  } catch (error) {
+    throw this.handleError(error);
+  }
+}
+
+  /**
+ * Đánh dấu đã xử lý xong đổi / trả hàng
+ */
+  async completeReturn(id, adminNote = '') {
+    try {
+      const response = await adminApi.put(`/returns/${id}/status`, {
+        status: 'completed',
+        adminNote
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+  
+  async confirmReturnConditions(payload) {
+  try {
+    const response = await adminApi.put(
+      `/returns/${payload.returnRequestId}/confirm-conditions`,
+      {
+        returnRequestId: payload.returnRequestId,
+        items: payload.items.map(it => ({
+          variantId: it.variantId,
+          damagedQuantity: it.damagedQuantity,
+          goodQuantity: it.goodQuantity
+        }))
+      }
+    )
+    return response.data
+  } catch (error) {
+    throw this.handleError(error)
+  }
+}
+
   // ===== WARRANTY =====
   async getWarranties(page = 0, size = 10, filters = {}) {
     try {
@@ -727,6 +959,15 @@ class AdminService {
     }
   }
 
+  async getNotificationStats() {
+    try {
+      const response = await adminApi.get('/notifications/stats')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   // ===== REVIEWS =====
   async getReviews(page = 0, size = 10, filters = {}) {
     try {
@@ -785,6 +1026,15 @@ class AdminService {
     }
   }
 
+  async getReviewStats() {
+    try {
+      const response = await adminApi.get('/reviews/stats')
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   // ===== FLASH SALES =====
   async getFlashSales() {
     try {
@@ -832,20 +1082,29 @@ class AdminService {
   }
 
   // ===== PRODUCT VARIANTS =====
-  async getProductVariants(page = 0, size = 10, filters = {}) {
+  async getProductVariants(page = 0, size = 10, filters = {}, sortBy = null, sortDirection = 'asc') {
     try {
       const cleanFilters = Object.entries(filters).reduce((acc, [key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          acc[key] = value
+          // ✅ Đổi tên 'size' filter thành 'variantSize' để tránh conflict với pagination size
+          const paramName = key === 'size' ? 'variantSize' : key
+          acc[paramName] = value
         }
         return acc
       }, {})
       
       const params = new URLSearchParams({
         page: page.toString(),
-        size: size.toString(),
+        ...(size ? { size: size.toString() } : {}), // ✅ Chỉ thêm size nếu có giá trị
         ...cleanFilters
       })
+      
+      // Thêm sort params nếu có
+      if (sortBy) {
+        params.append('sortBy', sortBy)
+        params.append('sortDirection', sortDirection)
+      }
+      
       const response = await adminApi.get(`/product-variants?${params}`)
       return response.data
     } catch (error) {
@@ -880,6 +1139,15 @@ class AdminService {
     }
   }
 
+  async createMultipleProductVariants(variantList) {
+  try {
+    const response = await adminApi.post('/product-variants/batch', variantList);
+    return response.data;
+  } catch (error) {
+    throw this.handleError(error);
+  }
+}
+
   async updateProductVariant(id, variantData) {
     try {
       const response = await adminApi.put(`/product-variants/${id}`, variantData)
@@ -907,6 +1175,17 @@ class AdminService {
     }
   }
 
+    // ===== VARIANT IMAGES =====
+  async getVariantImages(variantId) {
+    try {
+      const response = await adminApi.get(`/variant-images/${variantId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+
   // ===== ACTIVITY LOGS =====
   async getActivityLogs(page = 0, size = 10, filters = {}) {
     try {
@@ -923,6 +1202,50 @@ class AdminService {
         ...cleanFilters
       })
       const response = await adminApi.get(`/activity-logs?${params}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getActivityLogById(id) {
+    try {
+      const response = await adminApi.get(`/activity-logs/${id}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getActivityLogsByUser(userId, page = 0, size = 20) {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString()
+      })
+      const response = await adminApi.get(`/activity-logs/user/${userId}?${params}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getActivityLogsByEntity(entityType, entityId, page = 0, size = 20) {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: size.toString()
+      })
+      const response = await adminApi.get(`/activity-logs/entity/${entityType}/${entityId}?${params}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async deleteActivityLog(id) {
+    try {
+      const response = await adminApi.delete(`/activity-logs/${id}`)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -951,6 +1274,23 @@ class AdminService {
     }
   }
 
+  /**
+   * Log an activity
+   * @param {object} logData - Activity log data
+   */
+  async logActivity(logData) {
+    try {
+      // Backend should handle IP address capture automatically
+      // If backend doesn't have POST endpoint, this will fail silently
+      const response = await adminApi.post('/activity-logs', logData)
+      return response.data
+    } catch (error) {
+      // Don't throw - logging failures shouldn't break the app
+      console.error('Failed to log activity:', error)
+      return null
+    }
+  }
+
   // ===== EMAIL TEMPLATES =====
   async getEmailTemplates(page = 0, size = 10, filters = {}) {
     try {
@@ -967,6 +1307,15 @@ class AdminService {
         ...cleanFilters
       })
       const response = await adminApi.get(`/email-templates?${params}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getEmailTemplateStats() {
+    try {
+      const response = await adminApi.get('/email-templates/stats')
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1011,7 +1360,16 @@ class AdminService {
 
   async sendTestEmail(id, testData) {
     try {
-      const response = await adminApi.post(`/email-templates/${id}/test`, testData)
+      const response = await adminApi.post(`/email-templates/${id}/send-test`, testData)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async toggleEmailTemplateStatus(id) {
+    try {
+      const response = await adminApi.put(`/email-templates/${id}/toggle`)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1033,7 +1391,8 @@ class AdminService {
         size: size.toString(),
         ...cleanFilters
       })
-      const response = await adminApi.get(`/inventory?${params}`)
+      // Use /inventory/variants endpoint to get product variants with stock info
+      const response = await adminApi.get(`/inventory/variants?${params}`)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1055,6 +1414,15 @@ class AdminService {
         ...cleanFilters
       })
       const response = await adminApi.get(`/inventory/logs?${params}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async getInventoryLogById(id) {
+    try {
+      const response = await adminApi.get(`/inventory/logs/${id}`)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1110,6 +1478,15 @@ class AdminService {
     }
   }
 
+  async getUserLoyaltyBalance(userId) {
+    try {
+      const response = await adminApi.get(`/loyalty/users/${userId}/balance`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   // ===== PAYMENTS =====
   async getPayments(page = 0, size = 10, filters = {}) {
     try {
@@ -1135,6 +1512,17 @@ class AdminService {
   async getPaymentById(id) {
     try {
       const response = await adminApi.get(`/payments/${id}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async updatePaymentStatus(id, status) {
+    try {
+      const response = await adminApi.put(`/payments/${id}/status`, null, {
+        params: { status }
+      })
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1188,9 +1576,27 @@ class AdminService {
     }
   }
 
+  async getSettingsByType(type) {
+    try {
+      const response = await adminApi.get(`/settings/${type}`)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   async updateSettings(settingsData) {
     try {
       const response = await adminApi.put('/settings', settingsData)
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
+  async updateSettingsByType(type, settingsData) {
+    try {
+      const response = await adminApi.put(`/settings/${type}`, settingsData)
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -1207,27 +1613,41 @@ class AdminService {
     }
   }
 
+  async getPOSOrders(page = 0, size = 20) {
+    try {
+      const response = await adminApi.get('/pos/orders', {
+        params: { page, size }
+      })
+      return response.data
+    } catch (error) {
+      throw this.handleError(error)
+    }
+  }
+
   // ===== UTILITY METHODS =====
   handleError(error) {
-    if (error.response) {
-      // Server responded with error status
-      return {
-        message: error.response.data?.message || 'Có lỗi xảy ra từ server',
-        status: error.response.status,
-        data: error.response.data
-      }
-    } else if (error.request) {
-      // Request was made but no response received
-      return {
-        message: 'Không thể kết nối đến server',
-        status: 0
-      }
-    } else {
-      // Something else happened
-      return {
-        message: error.message || 'Có lỗi không xác định',
-        status: -1
-      }
+    // Use standardized error parsing
+    return parseAdminError(error)
+  }
+
+  /**
+   * Cancel all pending requests
+   */
+  cancelAllRequests() {
+    cancelTokenSources.forEach((source) => {
+      source.cancel('All requests cancelled')
+    })
+    cancelTokenSources.clear()
+  }
+
+  /**
+   * Cancel a specific request by key
+   * @param {string} requestKey - Key of the request to cancel
+   */
+  cancelRequest(requestKey) {
+    if (cancelTokenSources.has(requestKey)) {
+      cancelTokenSources.get(requestKey).cancel('Request cancelled')
+      cancelTokenSources.delete(requestKey)
     }
   }
 }

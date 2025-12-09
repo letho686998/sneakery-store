@@ -1,27 +1,21 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia' // 👈 1. Import Pinia
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import notificationService from '@/utils/notificationService'
+import logger from '@/utils/logger'
+
+// Import Tailwind CSS FIRST - before other styles
+import './assets/styles/tailwind.css'
 
 import App from './App.vue'
 import router from './routers/index.js'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
-
-// Import custom CSS - Modular Architecture
-import './assets/styles/main.css' // 🎨 Modular CSS Architecture với 25+ files
+import vPermission from './directives/v-permission.js'
 
 const app = createApp(App)
 const pinia = createPinia() // 👈 2. Tạo một instance của Pinia
 
-// ⚙️ Cấu hình mặc định
-ElMessage.defaults = {
-  offset: 20,      // cách mép trên 20px
-  showClose: true, // có nút đóng
-  grouping: false, // không gộp
-  center: false,
-  customClass: 'aurora-message'
-}
+// Register global directive
+app.directive('permission', vPermission)
 
 // ============================================
 // 🔐 AXIOS INTERCEPTOR - TỰ ĐỘNG GỬI JWT TOKEN
@@ -70,8 +64,8 @@ axios.interceptors.response.use(
     
     // Xử lý lỗi network
     if (!error.response) {
-      console.error('❌ Network Error:', error.message);
-      ElMessage.error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
+      logger.error('❌ Network Error:', error.message);
+      notificationService.error('Lỗi kết nối', 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
     }
     
     return Promise.reject(error);
@@ -79,7 +73,20 @@ axios.interceptors.response.use(
 );
 
 app.use(router)
-app.use(ElementPlus)
 app.use(pinia) // 👈 3. Sử dụng Pinia
+
+// ═══════════════════════════════════════════════════════════════════════
+// 🎨 THEME INITIALIZATION - Apply theme before first render
+// ═══════════════════════════════════════════════════════════════════════
+import { useThemeStore } from '@/stores/theme'
+const themeStore = useThemeStore()
+themeStore.initTheme()
+
+// ═══════════════════════════════════════════════════════════════════════
+// 🧪 EXPOSE NOTIFICATION SERVICE FOR TESTING (Development only)
+// ═══════════════════════════════════════════════════════════════════════
+if (import.meta.env.DEV) {
+  window.notificationService = notificationService
+}
 
 app.mount('#app')

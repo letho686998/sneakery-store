@@ -2,6 +2,7 @@ package com.sneakery.store.controller;
 
 import com.sneakery.store.dto.ActivityLogDto;
 import com.sneakery.store.entity.ActivityLog;
+import com.sneakery.store.exception.ApiException;
 import com.sneakery.store.repository.ActivityLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,9 +10,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Objects;
 
 /**
  * Admin Activity Log Controller
@@ -22,7 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/activity-logs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class AdminActivityLogController {
 
     private final ActivityLogRepository activityLogRepository;
@@ -52,6 +57,7 @@ public class AdminActivityLogController {
      * Lấy danh sách activity logs với pagination và filters
      */
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<ActivityLogDto>> getAllLogs(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int size,
@@ -70,7 +76,7 @@ public class AdminActivityLogController {
         } else if (action != null && !action.trim().isEmpty()) {
             logs = activityLogRepository.findByActionOrderByCreatedAtDesc(action, pageable);
         } else if (entityType != null && !entityType.trim().isEmpty()) {
-            logs = activityLogRepository.findAll(pageable); // Filter manually
+            logs = activityLogRepository.findByEntityTypeOrderByCreatedAtDesc(entityType, pageable);
         } else {
             logs = activityLogRepository.findAll(pageable);
         }
@@ -86,11 +92,12 @@ public class AdminActivityLogController {
      * Lấy chi tiết một activity log
      */
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<ActivityLogDto> getLogById(@PathVariable Long id) {
         log.info("📋 Fetching activity log ID: {}", id);
         
-        ActivityLog log = activityLogRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Activity log not found with id: " + id));
+        ActivityLog log = activityLogRepository.findById(Objects.requireNonNull(id))
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Activity log not found with id: " + id));
         
         return ResponseEntity.ok(mapToDto(log));
     }
@@ -100,6 +107,7 @@ public class AdminActivityLogController {
      * Lấy logs của một user cụ thể
      */
     @GetMapping("/user/{userId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<ActivityLogDto>> getLogsByUser(
         @PathVariable Long userId,
         @RequestParam(defaultValue = "0") int page,
@@ -121,6 +129,7 @@ public class AdminActivityLogController {
      * Lấy logs của một entity cụ thể
      */
     @GetMapping("/entity/{entityType}/{entityId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<Page<ActivityLogDto>> getLogsByEntity(
         @PathVariable String entityType,
         @PathVariable Long entityId,
@@ -147,12 +156,23 @@ public class AdminActivityLogController {
     public ResponseEntity<String> deleteLog(@PathVariable Long id) {
         log.info("🗑️ Deleting activity log ID: {}", id);
         
-        if (!activityLogRepository.existsById(id)) {
+        Long nonNullId = Objects.requireNonNull(id);
+        if (!activityLogRepository.existsById(nonNullId)) {
             return ResponseEntity.notFound().build();
         }
         
-        activityLogRepository.deleteById(id);
+        activityLogRepository.deleteById(nonNullId);
         return ResponseEntity.ok("Đã xóa nhật ký hoạt động thành công");
     }
+
+    @PostMapping
+    @Transactional
+    public ResponseEntity<ActivityLogDto> createLog(@RequestBody ActivityLog activityLog) {
+        log.info("📝 Creating activity log: {}", activityLog);
+
+        ActivityLog saved = activityLogRepository.save(activityLog);
+        return ResponseEntity.ok(mapToDto(saved));
+    }
+
 }
 

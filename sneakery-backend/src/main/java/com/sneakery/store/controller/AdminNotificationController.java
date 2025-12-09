@@ -2,6 +2,7 @@ package com.sneakery.store.controller;
 
 import com.sneakery.store.dto.NotificationDto;
 import com.sneakery.store.entity.Notification;
+import com.sneakery.store.exception.NotificationNotFoundException;
 import com.sneakery.store.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +11,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Admin Notification Controller
@@ -24,7 +27,7 @@ import java.util.Map;
 @RequestMapping("/api/admin/notifications")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"})
 public class AdminNotificationController {
 
     private final NotificationRepository notificationRepository;
@@ -51,6 +54,7 @@ public class AdminNotificationController {
     /**
      * Lấy tất cả notifications (phân trang)
      */
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseEntity<Page<NotificationDto>> getAllNotifications(
             @RequestParam(defaultValue = "0") int page,
@@ -108,12 +112,14 @@ public class AdminNotificationController {
     /**
      * Lấy notification theo ID
      */
+    @Transactional(readOnly = true)
     @GetMapping("/{id}")
     public ResponseEntity<NotificationDto> getNotificationById(@PathVariable Long id) {
         log.info("📍 GET /api/admin/notifications/{}", id);
         
-        Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notification không tồn tại"));
+        // Sử dụng method với @EntityGraph để eager load User
+        Notification notification = notificationRepository.findByIdWithUser(id)
+                .orElseThrow(() -> new NotificationNotFoundException(id));
         
         return ResponseEntity.ok(mapToDto(notification));
     }
@@ -125,7 +131,7 @@ public class AdminNotificationController {
     public ResponseEntity<Map<String, String>> deleteNotification(@PathVariable Long id) {
         log.info("📍 DELETE /api/admin/notifications/{}", id);
         
-        notificationRepository.deleteById(id);
+        notificationRepository.deleteById(Objects.requireNonNull(id));
         
         Map<String, String> response = new HashMap<>();
         response.put("message", "Đã xóa thông báo thành công");

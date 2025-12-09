@@ -1,105 +1,166 @@
 <template>
-  <div class="admin-page product-variants-page">
+  <div class="max-w-[1600px] mx-auto w-full p-4 space-y-4">
     <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title">
-            <i class="material-icons">style</i>
+    <div
+      class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div
+        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h1
+            class="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+          >
+            <i class="material-icons text-purple-600 dark:text-purple-400"
+              >style</i
+            >
             Quản Lý Biến Thể Sản Phẩm
           </h1>
-          <p class="page-subtitle">Quản lý màu sắc, kích thước và tồn kho của từng biến thể sản phẩm</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Quản lý màu sắc, kích thước và tồn kho của từng biến thể sản phẩm
+          </p>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-primary" @click="openAddVariantModal">
-            <i class="material-icons">add</i>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-sm"
+            @click="openAddVariantModal"
+          >
+            <i class="material-icons text-base">add</i>
             Thêm Biến Thể
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon primary">
-          <i class="material-icons">inventory_2</i>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">inventory_2</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ stats.totalVariants }}</h3>
-          <p class="stat-label">Tổng Biến Thể</p>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon success">
-          <i class="material-icons">check_circle</i>
-        </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ stats.inStock }}</h3>
-          <p class="stat-label">Còn Hàng</p>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ stats.totalVariants }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Tổng Biến Thể</p>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon warning">
-          <i class="material-icons">warning</i>
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">check_circle</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ stats.lowStock }}</h3>
-          <p class="stat-label">Sắp Hết</p>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ stats.inStock }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Còn Hàng</p>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon danger">
-          <i class="material-icons">remove_circle</i>
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">warning</i>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 class="stat-value">{{ stats.outOfStock }}</h3>
-          <p class="stat-label">Hết Hàng</p>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ stats.lowStock }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Sắp Hết</p>
+        </div>
+      </div>
+
+      <div
+        class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <div
+            class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center"
+          >
+            <i class="material-icons text-white text-lg">remove_circle</i>
+          </div>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {{ stats.outOfStock }}
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Hết Hàng</p>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="filters-section">
-      <div class="filter-row">
-        <div class="filter-group">
-          <label class="filter-label">
-            <i class="material-icons">search</i>
+    <div
+      class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+          >
+            <i class="material-icons text-sm">search</i>
             Tìm kiếm
           </label>
           <input
             type="text"
             v-model="filters.search"
-            placeholder="Tìm theo tên sản phẩm, SKU, màu sắc..."
-            class="filter-input"
-            @input="handleSearch"
+            placeholder="Tìm theo tên sản phẩm..."
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            @input="debouncedSearch"
           />
         </div>
 
-        <div class="filter-group">
-          <label class="filter-label">
-            <i class="material-icons">palette</i>
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+          >
+            <i class="material-icons text-sm">palette</i>
             Màu sắc
           </label>
-          <select v-model="filters.color" class="filter-select" @change="handleFilter">
+          <select
+            v-model="filters.color"
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            @change="handleFilter"
+          >
             <option value="">Tất cả màu</option>
-            <option value="black">Đen</option>
-            <option value="white">Trắng</option>
-            <option value="red">Đỏ</option>
-            <option value="blue">Xanh dương</option>
-            <option value="green">Xanh lá</option>
+            <option value="Đen">Đen</option>
+            <option value="Trắng">Trắng</option>
+            <option value="Đỏ">Đỏ</option>
+            <option value="Xanh dương">Xanh dương</option>
+            <option value="Xanh lá">Xanh lá</option>
           </select>
         </div>
 
-        <div class="filter-group">
-          <label class="filter-label">
-            <i class="material-icons">straighten</i>
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+          >
+            <i class="material-icons text-sm">straighten</i>
             Kích thước
           </label>
-          <select v-model="filters.size" class="filter-select" @change="handleFilter">
+          <select
+            v-model="filters.size"
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            @change="handleFilter"
+          >
             <option value="">Tất cả size</option>
             <option value="35">35</option>
             <option value="36">36</option>
@@ -113,12 +174,18 @@
           </select>
         </div>
 
-        <div class="filter-group">
-          <label class="filter-label">
-            <i class="material-icons">inventory</i>
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"
+          >
+            <i class="material-icons text-sm">inventory</i>
             Trạng thái kho
           </label>
-          <select v-model="filters.stockStatus" class="filter-select" @change="handleFilter">
+          <select
+            v-model="filters.stockStatus"
+            class="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            @change="handleFilter"
+          >
             <option value="">Tất cả</option>
             <option value="in_stock">Còn hàng</option>
             <option value="low_stock">Sắp hết</option>
@@ -129,104 +196,271 @@
     </div>
 
     <!-- Variants Table -->
-    <div class="table-container">
-      <table class="variants-table">
-        <thead>
-          <tr>
-            <th>Hình ảnh</th>
-            <th>Sản phẩm</th>
-            <th>SKU</th>
-            <th>Màu sắc</th>
-            <th>Kích thước</th>
-            <th>Giá</th>
-            <th>Tồn kho</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="variant in variants" :key="variant.id" class="variant-row">
-            <td>
-              <img :src="variant.imageUrl || '/placeholder-image.png'" :alt="variant.productName" class="variant-image" />
-            </td>
-            <td>
-              <div class="product-info">
-                <span class="product-name">{{ variant.productName }}</span>
-                <div class="product-brand" v-if="variant.brandName">{{ variant.brandName }}</div>
-              </div>
-            </td>
-            <td>
-              <code class="sku-code">{{ variant.sku }}</code>
-            </td>
-            <td>
-              <div class="color-badge">
-                <span class="color-dot" :style="{ backgroundColor: getColorHex(variant.color) }"></span>
-                <span>{{ getColorName(variant.color) }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="size-badge">{{ variant.size }}</span>
-            </td>
-            <td>
-              <span class="price">{{ formatPrice(getCurrentPrice(variant)) }}</span>
-            </td>
-            <td>
-              <span class="stock-quantity" :class="getStockClass(variant.stockQuantity)">
-                {{ variant.stockQuantity }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" :class="getStockStatusClass(variant.stockQuantity)">
-                {{ getStockStatusLabel(variant.stockQuantity) }}
-              </span>
-            </td>
-            <td>
-              <div class="action-buttons">
-                <button class="btn-icon btn-edit" @click="editVariant(variant)" title="Chỉnh sửa">
-                  <i class="material-icons">edit</i>
-                </button>
-                <button class="btn-icon btn-delete" @click="deleteVariant(variant)" title="Xóa">
-                  <i class="material-icons">delete</i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
+      <!-- Loading State -->
+      <div
+        v-if="loading"
+        class="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+      >
+        <div
+          class="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+        ></div>
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          Đang tải dữ liệu...
+        </p>
+      </div>
 
       <!-- Empty State -->
-      <div v-if="variants.length === 0" class="empty-state">
-        <i class="material-icons">inventory_2</i>
-        <p>Không tìm thấy biến thể nào</p>
+      <div
+        v-else-if="variants.length === 0"
+        class="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+      >
+        <div
+          class="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4"
+        >
+          <i
+            class="material-icons text-purple-600 dark:text-purple-400 text-3xl"
+            >inventory_2</i
+          >
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          Không tìm thấy biến thể nào
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">
+          Bắt đầu thêm biến thể đầu tiên cho sản phẩm của bạn
+        </p>
+        <button
+          @click="openAddVariantModal"
+          class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-sm"
+        >
+          <i class="material-icons text-base">add</i>
+          Thêm Biến Thể
+        </button>
       </div>
-    </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="loading-container">
-      <div class="loading-spinner"></div>
-      <p>Đang tải dữ liệu...</p>
-    </div>
+      <!-- Table -->
+      <div v-else class="overflow-x-auto">
+        <table class="w-full">
+          <thead
+            class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600"
+          >
+            <tr>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Hình ảnh
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Sản phẩm
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                SKU
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Màu sắc
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Kích thước
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                @click="handleSort('price')"
+              >
+                <div class="flex items-center gap-1">
+                  Giá
+                  <i
+                    v-if="sortBy === 'price'"
+                    class="material-icons text-sm text-purple-600 dark:text-purple-400"
+                  >
+                    {{
+                      sortDirection === "asc"
+                        ? "arrow_upward"
+                        : "arrow_downward"
+                    }}
+                  </i>
+                  <i
+                    v-else
+                    class="material-icons text-sm text-gray-400 opacity-0 group-hover:opacity-50"
+                  >
+                    swap_vert
+                  </i>
+                </div>
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Tồn kho
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Trạng thái
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+              >
+                Thao tác
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+          >
+            <tr
+              v-for="variant in variants"
+              :key="variant.id"
+              :id="`variant-row-${variant.id}`"
+              class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+            >
+              <td class="px-4 py-4">
+                <img
+                  :src="
+                    variantImages[variant.id]?.[0]?.imageUrl ||
+                    variant.imageUrl ||
+                    '/placeholder-image.png'
+                  "
+                  :alt="variant.productName"
+                  class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                />
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex flex-col">
+                  <span
+                    class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                    >{{ variant.productName }}</span
+                  >
+                  <span
+                    v-if="variant.brandName"
+                    class="text-xs text-gray-500 dark:text-gray-400"
+                    >{{ variant.brandName }}</span
+                  >
+                </div>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <code
+                  class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono text-gray-900 dark:text-gray-100"
+                  >{{ variant.sku }}</code
+                >
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600"
+                    :style="{ backgroundColor: getColorHex(variant.color) }"
+                  ></span>
+                  <span class="text-sm text-gray-900 dark:text-gray-100">{{
+                    getColorName(variant.color)
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span
+                  class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                  >{{ variant.size }}</span
+                >
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span
+                  class="text-sm font-semibold text-gray-900 dark:text-gray-100"
+                  >{{ formatPrice(getCurrentPrice(variant)) }}</span
+                >
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span
+                  class="text-sm font-semibold"
+                  :class="{
+                    'text-green-600 dark:text-green-400':
+                      variant.stockQuantity > 10,
+                    'text-yellow-600 dark:text-yellow-400':
+                      variant.stockQuantity > 0 && variant.stockQuantity <= 10,
+                    'text-red-600 dark:text-red-400':
+                      variant.stockQuantity === 0,
+                  }"
+                >
+                  {{ variant.stockQuantity }}
+                </span>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span
+                  class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full"
+                  :class="{
+                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400':
+                      variant.stockQuantity > 10,
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400':
+                      variant.stockQuantity > 0 && variant.stockQuantity <= 10,
+                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400':
+                      variant.stockQuantity === 0,
+                  }"
+                >
+                  {{ getStockStatusLabel(variant.stockQuantity) }}
+                </span>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-2">
+                  <button
+                    class="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    @click="editVariant(variant)"
+                    title="Chỉnh sửa"
+                  >
+                    <i class="material-icons text-base">edit</i>
+                  </button>
+                  <button
+                    class="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    @click="openDeleteConfirm(variant)"
+                    title="Xóa"
+                  >
+                    <i class="material-icons text-base">delete</i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Pagination -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button
-        class="pagination-btn"
-        :disabled="!paginationInfo.hasPrev || isLoading"
-        @click="changePage(currentPage - 1)"
+      <!-- Pagination -->
+      <div
+        v-if="totalPages > 1 && !loading"
+        class="flex items-center justify-between gap-4 px-4 py-3 mt-4 border-t border-gray-200 dark:border-gray-700"
       >
-        <i class="material-icons">chevron_left</i>
-      </button>
-      <span class="page-info">
-        Trang {{ paginationInfo.currentPage }} / {{ paginationInfo.totalPages }}
-        ({{ totalElements }} biến thể)
-      </span>
-      <button
-        class="pagination-btn"
-        :disabled="!paginationInfo.hasNext || isLoading"
-        @click="changePage(currentPage + 1)"
-      >
-        <i class="material-icons">chevron_right</i>
-      </button>
+        <div class="text-sm text-gray-600 dark:text-gray-400">
+          Hiển thị {{ currentPage * pageSize + 1 }} -
+          {{ Math.min((currentPage + 1) * pageSize, totalElements) }} trong tổng
+          số {{ totalElements }} biến thể
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!paginationInfo.hasPrev || loading"
+            @click="changePage(currentPage - 1)"
+          >
+            <i class="material-icons text-base">chevron_left</i>
+            Trước
+          </button>
+          <span class="px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300">
+            Trang {{ paginationInfo.currentPage }} /
+            {{ paginationInfo.totalPages }}
+          </span>
+          <button
+            class="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!paginationInfo.hasNext || loading"
+            @click="changePage(currentPage + 1)"
+          >
+            Sau
+            <i class="material-icons text-base">chevron_right</i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Variant Modal -->
@@ -236,45 +470,67 @@
       @close="closeModal"
       @success="handleModalSuccess"
     />
+
+    <!-- 🔹 Popup xác nhận xóa biến thể -->
+    <ConfirmDialog
+      v-model="showDeleteModal"
+      type="danger"
+      title="Xác nhận xóa biến thể"
+      :message="`Bạn có chắc chắn muốn xóa biến thể '${variantToDelete?.sku}' không?`"
+      description="Hành động này không thể hoàn tác."
+      confirm-text="Xóa biến thể"
+      cancel-text="Hủy"
+      :loading="deleting"
+      @confirm="deleteVariantConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { useAdminStore } from '@/stores/admin'
-import { useLoadingState } from '@/composables/useLoadingState'
-import toastService from '@/utils/toastService'
-import VariantModal from '@/assets/components/admin/VariantModal.vue'
+import { ref, reactive, onMounted, computed, nextTick } from "vue";
+import { useAdminStore } from "@/stores/admin";
+import notificationService from "@/utils/notificationService";
+// import notificationService from "@/utils/notificationService";
+import VariantModal from "@/assets/components/admin/VariantModal.vue";
+import ConfirmDialog from "@/assets/components/common/ConfirmDialog.vue";
+import { debounce } from "@/utils/debounce";
+import logger from "@/utils/logger";
+import { formatPrice } from "@/utils/formatters";
 
-// ===== STORES & COMPOSABLES =====
-const adminStore = useAdminStore()
-const { setLoading, isLoading } = useLoadingState()
-const toast = toastService
+// ===== STORES =====
+const adminStore = useAdminStore();
 
 // ===== STATE =====
-const variants = ref([])
-const currentPage = ref(0)
-const pageSize = ref(10)
-const totalElements = ref(0)
-const totalPages = ref(1)
+const variants = ref([]);
+const currentPage = ref(0);
+const pageSize = ref(10);
+const totalElements = ref(0);
+const totalPages = ref(1);
+const loading = ref(false);
+const highlightVariantId = ref(null);
+const variantImages = ref({});
 
 const stats = reactive({
   totalVariants: 0,
   inStock: 0,
   lowStock: 0,
-  outOfStock: 0
-})
+  outOfStock: 0,
+});
 
 const filters = reactive({
-  search: '',
-  color: '',
-  size: '',
-  stockStatus: ''
-})
+  search: "",
+  color: "",
+  size: "",
+  stockStatus: "",
+});
+
+// ===== SORT STATE =====
+const sortBy = ref(null); // null, "price", "stock", "sku", etc.
+const sortDirection = ref("asc"); // "asc" or "desc"
 
 // ===== MODAL STATE =====
-const isModalOpen = ref(false)
-const selectedVariant = ref(null)
+const isModalOpen = ref(false);
+const selectedVariant = ref(null);
 
 // ===== COMPUTED =====
 const paginationInfo = computed(() => ({
@@ -282,828 +538,278 @@ const paginationInfo = computed(() => ({
   totalPages: totalPages.value,
   totalElements: totalElements.value,
   hasNext: currentPage.value < totalPages.value - 1,
-  hasPrev: currentPage.value > 0
-}))
+  hasPrev: currentPage.value > 0,
+}));
 
 // ===== LIFECYCLE =====
 onMounted(async () => {
-  await loadVariants()
-  await loadStats()
-})
+  await loadVariants();
+  await loadStats();
+});
 
 // ===== METHODS =====
 const loadVariants = async () => {
   try {
-    setLoading(true, 'Đang tải danh sách biến thể...')
-    const result = await adminStore.fetchProductVariants(currentPage.value, pageSize.value, filters)
-    
-    variants.value = result.content || []
-    totalElements.value = result.totalElements || 0
-    totalPages.value = result.totalPages || 1
+    loading.value = true;
+    const result = await adminStore.fetchProductVariants(
+      currentPage.value,
+      pageSize.value,
+      filters,
+      sortBy.value,
+      sortDirection.value
+    );
+
+    variants.value = result.content || [];
+    totalElements.value = result.totalElements || 0;
+    totalPages.value = result.totalPages || 1;
+    // Load ảnh cho từng variant
+    for (const v of variants.value) {
+      loadVariantImages(v.id);
+    }
   } catch (error) {
-    console.error('Error loading variants:', error)
-    toast.error('Lỗi', 'Không thể tải danh sách biến thể')
+    logger.error("Error loading variants:", error);
+    notificationService.apiError(error, "Không thể tải danh sách biến thể");
   } finally {
-    setLoading(false)
+    loading.value = false;
   }
-}
+};
+
+const loadVariantImages = async (variantId) => {
+  try {
+    const res = await adminStore.fetchVariantImages(variantId);
+    variantImages.value[variantId] = res || [];
+  } catch (error) {
+    console.error("Error loading variant images:", error);
+    variantImages.value[variantId] = [];
+  }
+};
+
+const handleSort = (field) => {
+  if (sortBy.value === field) {
+    // Đang sort cùng field, toggle direction hoặc reset về không sort
+    if (sortDirection.value === "asc") {
+      // Từ asc -> desc
+      sortDirection.value = "desc";
+    } else if (sortDirection.value === "desc") {
+      // Từ desc -> không sort (reset)
+      sortBy.value = null;
+      sortDirection.value = "asc";
+    }
+  } else {
+    // Set field mới và mặc định là asc
+    sortBy.value = field;
+    sortDirection.value = "asc";
+  }
+  currentPage.value = 0; // Reset về trang đầu
+  loadVariants();
+};
 
 const loadStats = async () => {
   try {
-    const result = await adminStore.fetchProductVariantStats()
-    stats.totalVariants = result.totalVariants || 0
-    stats.inStock = result.inStockVariants || 0
-    stats.lowStock = result.lowStockVariants || 0
-    stats.outOfStock = result.outOfStockVariants || 0
+    const result = await adminStore.fetchProductVariantStats();
+    stats.totalVariants = result.totalVariants || 0;
+    stats.inStock = result.inStockVariants || 0;
+    stats.lowStock = result.lowStockVariants || 0;
+    stats.outOfStock = result.outOfStockVariants || 0;
   } catch (error) {
-    console.error('Error loading stats:', error)
+    logger.error("Error loading stats:", error);
     // Fallback to calculating from variants if API fails
-    calculateStatsFromVariants()
+    calculateStatsFromVariants();
   }
-}
+};
 
 const calculateStatsFromVariants = () => {
-  stats.totalVariants = variants.value.length
-  stats.inStock = variants.value.filter(v => v.stockQuantity > 10).length
-  stats.lowStock = variants.value.filter(v => v.stockQuantity > 0 && v.stockQuantity <= 10).length
-  stats.outOfStock = variants.value.filter(v => v.stockQuantity === 0).length
-}
+  stats.totalVariants = variants.value.length;
+  stats.inStock = variants.value.filter((v) => v.stockQuantity > 10).length;
+  stats.lowStock = variants.value.filter(
+    (v) => v.stockQuantity > 0 && v.stockQuantity <= 10
+  ).length;
+  stats.outOfStock = variants.value.filter((v) => v.stockQuantity === 0).length;
+};
 
 const handleSearch = async () => {
-  currentPage.value = 0
-  await loadVariants()
-}
+  currentPage.value = 0;
+  await loadVariants();
+};
+
+// Debounce search để tránh gọi API quá nhiều khi user đang gõ
+const debouncedSearch = debounce(handleSearch, 500);
 
 const handleFilter = async () => {
-  currentPage.value = 0
-  await loadVariants()
-}
+  currentPage.value = 0;
+  await loadVariants();
+};
 
 const openAddVariantModal = () => {
-  selectedVariant.value = null
-  isModalOpen.value = true
-}
+  selectedVariant.value = null;
+  isModalOpen.value = true;
+};
 
 const editVariant = (variant) => {
-  selectedVariant.value = variant
-  isModalOpen.value = true
-}
+  selectedVariant.value = variant;
+  isModalOpen.value = true;
+};
 
 const closeModal = () => {
-  isModalOpen.value = false
-  selectedVariant.value = null
-}
+  isModalOpen.value = false;
+  selectedVariant.value = null;
+};
 
-const handleModalSuccess = async () => {
-  await loadVariants()
-  await loadStats()
-}
+const handleModalSuccess = async (variantId) => {
+  // Lưu ID để (nếu cần) debug sau này
+  highlightVariantId.value = variantId || null;
 
-const deleteVariant = async (variant) => {
-  if (!confirm(`Bạn có chắc chắn muốn xóa biến thể ${variant.sku}?`)) {
-    return
+  // Sau khi tạo / update xong, nên load lại từ trang hiện tại
+  await loadVariants();
+  await loadStats();
+
+  // Nếu variant nằm trong trang hiện tại thì cuộn + highlight
+  if (variantId) {
+    scrollToVariantRow(variantId);
   }
-  
+};
+
+// ===== DELETE VARIANT (với ConfirmDialog) =====
+const showDeleteModal = ref(false);
+const deleting = ref(false);
+const variantToDelete = ref(null);
+
+const openDeleteConfirm = (variant) => {
+  variantToDelete.value = variant;
+  showDeleteModal.value = true;
+};
+
+const deleteVariantConfirmed = async () => {
+  if (!variantToDelete.value) return;
+
+  deleting.value = true;
   try {
-    setLoading(true, 'Đang xóa biến thể...')
-    await adminStore.deleteProductVariant(variant.id)
-    toast.success('Thành công', 'Đã xóa biến thể thành công')
-    await loadVariants()
-    await loadStats()
+    await adminStore.deleteProductVariant(variantToDelete.value.id);
+    notificationService.success(
+      "Thành công",
+      `Đã xóa biến thể "${variantToDelete.value.sku}" thành công!`
+    );
+    await loadVariants();
+    await loadStats();
   } catch (error) {
-    console.error('Error deleting variant:', error)
-    toast.error('Lỗi', 'Không thể xóa biến thể')
+    logger.error("Error deleting variant:", error);
+    notificationService.apiError(error, "Không thể xóa biến thể");
   } finally {
-    setLoading(false)
+    deleting.value = false;
+    showDeleteModal.value = false;
+    variantToDelete.value = null;
   }
-}
+};
 
 const changePage = async (page) => {
-  currentPage.value = page
-  await loadVariants()
-}
+  currentPage.value = page;
+  await loadVariants();
+};
 
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
-}
+// formatPrice đã được import từ @/utils/formatters
 
 const getColorHex = (color) => {
   const colorMap = {
-    'black': '#000000',
-    'white': '#FFFFFF',
-    'red': '#EF4444',
-    'blue': '#3B82F6',
-    'green': '#10B981',
-    'yellow': '#F59E0B',
-    'purple': '#8B5CF6',
-    'pink': '#EC4899',
-    'gray': '#6B7280',
-    'brown': '#A78BFA'
-  }
-  return colorMap[color?.toLowerCase()] || '#9CA3AF'
-}
+    black: "#000000",
+    white: "#FFFFFF",
+    red: "#EF4444",
+    blue: "#3B82F6",
+    green: "#10B981",
+    yellow: "#F59E0B",
+    purple: "#8B5CF6",
+    pink: "#EC4899",
+    gray: "#6B7280",
+    brown: "#A78BFA",
+  };
+  return colorMap[color?.toLowerCase()] || "#9CA3AF";
+};
 
 const getColorName = (color) => {
   const colorMap = {
-    'black': 'Đen',
-    'white': 'Trắng',
-    'red': 'Đỏ',
-    'blue': 'Xanh dương',
-    'green': 'Xanh lá',
-    'yellow': 'Vàng',
-    'purple': 'Tím',
-    'pink': 'Hồng',
-    'gray': 'Xám',
-    'brown': 'Nâu'
-  }
-  return colorMap[color?.toLowerCase()] || color || 'Không xác định'
-}
+    black: "Đen",
+    white: "Trắng",
+    red: "Đỏ",
+    blue: "Xanh dương",
+    green: "Xanh lá",
+    yellow: "Vàng",
+    purple: "Tím",
+    pink: "Hồng",
+    gray: "Xám",
+    brown: "Nâu",
+  };
+  return colorMap[color?.toLowerCase()] || color || "Không xác định";
+};
 
 const getCurrentPrice = (variant) => {
   // Ưu tiên giá sale nếu có, nếu không thì dùng giá base
-  return variant.priceSale || variant.priceBase || 0
-}
+  return variant.priceSale || variant.priceBase || 0;
+};
 
 const getStockClass = (quantity) => {
-  if (quantity === 0) return 'stock-out'
-  if (quantity <= 10) return 'stock-low'
-  return 'stock-ok'
-}
+  if (quantity === 0) return "stock-out";
+  if (quantity <= 10) return "stock-low";
+  return "stock-ok";
+};
 
 const getStockStatusClass = (quantity) => {
-  if (quantity === 0) return 'status-danger'
-  if (quantity <= 10) return 'status-warning'
-  return 'status-success'
-}
+  if (quantity === 0) return "status-danger";
+  if (quantity <= 10) return "status-warning";
+  return "status-success";
+};
 
 const getStockStatusLabel = (quantity) => {
-  if (quantity === 0) return 'Hết hàng'
-  if (quantity <= 10) return 'Sắp hết'
-  return 'Còn hàng'
-}
+  if (quantity === 0) return "Hết hàng";
+  if (quantity <= 10) return "Sắp hết";
+  return "Còn hàng";
+};
+
+const scrollToVariantRow = async (variantId) => {
+  if (!variantId) return;
+
+  await nextTick(); // chờ DOM render xong
+
+  const rowEl = document.getElementById(`variant-row-${variantId}`);
+  if (!rowEl) return;
+
+  // Cuộn mượt đến giữa màn hình
+  rowEl.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+
+  // Thêm class highlight trong 3 giây
+  rowEl.classList.add("row-highlight");
+  setTimeout(() => {
+    rowEl.classList.remove("row-highlight");
+  }, 3000);
+};
 </script>
-
 <style scoped>
-/* ═══════════════════════════════════════════════════════════════════════
-   📦 PRODUCT VARIANTS PAGE - UNIFIED DARK THEME
-   ═══════════════════════════════════════════════════════════════════════ */
-
-.product-variants-page {
-  padding: var(--space-8);
-  max-width: 1600px;
-  margin: 0 auto;
-  min-height: calc(100vh - 4rem);
+/* Hiệu ứng vàng neon nhấp nháy */
+.row-highlight {
+  animation: neonFlash 1.8s ease-out forwards;
 }
 
-/* ═══ PAGE HEADER ═══ */
-.page-header {
-  background: var(--card-bg);
-  border-radius: var(--radius-2xl);
-  padding: var(--space-8);
-  margin-bottom: var(--space-8);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-primary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-6);
-}
-
-.title-section {
-  flex: 1;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
-}
-
-.page-title .material-icons {
-  font-size: 2rem;
-  color: var(--accent-primary);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
+@keyframes neonFlash {
+  0% {
+    background-color: rgba(255, 255, 0, 0.9); /* neon vàng đậm */
+    box-shadow: 0 0 12px rgba(255, 255, 0, 0.7);
+  }
+  25% {
+    background-color: rgba(255, 255, 0, 0.4);
+    box-shadow: 0 0 4px rgba(255, 255, 0, 0.3);
   }
   50% {
-    opacity: 0.8;
-    transform: scale(1.05);
+    background-color: rgba(255, 255, 0, 1);
+    box-shadow: 0 0 16px rgba(255, 255, 0, 0.9);
   }
-}
-
-.page-subtitle {
-  color: var(--text-tertiary);
-  font-size: var(--text-base);
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: var(--space-3);
-  flex-shrink: 0;
-}
-
-/* ═══ STATS GRID ═══ */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-.stat-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  display: flex;
-  gap: var(--space-4);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-primary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all var(--transition-fast);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--gradient-primary);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-glow-purple);
-  border-color: var(--accent-primary);
-}
-
-.stat-card:hover::before {
-  opacity: 1;
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: var(--shadow-md);
-  transition: all var(--transition-fast);
-}
-
-.stat-card:hover .stat-icon {
-  transform: scale(1.1) rotate(5deg);
-}
-
-.stat-icon.primary {
-  background: var(--gradient-primary);
-}
-
-.stat-icon.success {
-  background: var(--gradient-success);
-}
-
-.stat-icon.warning {
-  background: var(--gradient-warning);
-}
-
-.stat-icon.danger {
-  background: var(--gradient-danger);
-}
-
-.stat-icon .material-icons {
-  color: var(--color-white);
-  font-size: var(--text-3xl);
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-1) 0;
-  line-height: 1;
-}
-
-.stat-label {
-  color: var(--text-tertiary);
-  font-size: var(--text-sm);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* ═══ FILTERS ═══ */
-.filters-section {
-  background: var(--card-bg);
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  margin-bottom: var(--space-6);
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-primary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.filter-row {
-  display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: var(--space-4);
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.filter-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.filter-label .material-icons {
-  font-size: 1rem;
-  color: var(--accent-primary);
-}
-
-.filter-input,
-.filter-select {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-base);
-  transition: all var(--transition-fast);
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--text-primary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.filter-input:hover,
-.filter-select:hover {
-  border-color: var(--border-hover);
-  background: rgba(15, 23, 42, 0.8);
-}
-
-.filter-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  background: rgba(15, 23, 42, 0.9);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15),
-              0 4px 16px rgba(167, 139, 250, 0.2);
-}
-
-.filter-input::placeholder {
-  color: var(--text-quaternary);
-}
-
-.filter-select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right var(--space-3) center;
-  background-size: 20px;
-  padding-right: var(--space-10);
-}
-
-/* ═══ TABLE ═══ */
-.table-container {
-  background: var(--card-bg);
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-card);
-  margin-bottom: var(--space-6);
-  border: 1px solid var(--border-primary);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.variants-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: transparent;
-}
-
-.variants-table thead {
-  background: var(--table-header-bg);
-  border-bottom: 2px solid var(--border-primary);
-}
-
-/* Table headers use global admin-tables.css styles */
-
-.variants-table tbody tr {
-  background: rgba(30, 41, 59, 0.4);
-  border-bottom: 1px solid var(--border-subtle);
-  transition: all var(--transition-fast);
-}
-
-.variants-table tbody tr:hover {
-  background: rgba(167, 139, 250, 0.1);
-  transform: scale(1.002);
-}
-
-/* Table cells use global admin-tables.css styles */
-
-.variant-image {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  border: 2px solid var(--border-primary);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-}
-
-.variant-image:hover {
-  transform: scale(1.15);
-  border-color: var(--accent-primary);
-  box-shadow: var(--shadow-glow-purple);
-}
-
-.product-name {
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  display: block;
-  margin-bottom: var(--space-1);
-}
-
-.product-brand {
-  font-size: var(--text-sm);
-  color: var(--text-tertiary);
-  font-weight: var(--font-normal);
-}
-
-.sku-code {
-  background: var(--bg-tertiary);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  color: var(--accent-primary);
-  border: 1px solid var(--border-primary);
-}
-
-.color-badge {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.color-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full);
-  border: 2px solid var(--border-primary);
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
-}
-
-.color-badge:hover .color-dot {
-  transform: scale(1.2);
-  box-shadow: var(--shadow-md);
-}
-
-.size-badge {
-  display: inline-block;
-  background: var(--bg-tertiary);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  border: 1px solid var(--border-primary);
-  min-width: 40px;
-  text-align: center;
-}
-
-.price {
-  font-weight: var(--font-bold);
-  color: var(--success-text);
-  font-size: var(--text-lg);
-}
-
-.stock-quantity {
-  font-weight: var(--font-bold);
-  font-size: var(--text-lg);
-}
-
-.stock-ok {
-  color: var(--success-text);
-}
-
-.stock-low {
-  color: var(--warning-text);
-}
-
-.stock-out {
-  color: var(--error-text);
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1-5) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.status-success {
-  background: var(--success-bg);
-  color: var(--success-text);
-  border: 1px solid var(--success-border);
-}
-
-.status-warning {
-  background: var(--warning-bg);
-  color: var(--warning-text);
-  border: 1px solid var(--warning-border);
-}
-
-.status-danger {
-  background: var(--error-bg);
-  color: var(--error-text);
-  border: 1px solid var(--error-border);
-}
-
-/* ═══ ACTION BUTTONS ═══ */
-.action-buttons {
-  display: flex;
-  gap: var(--space-2);
-}
-
-/* Action buttons use global admin-tables.css styles */
-
-/* ═══ LOADING STATE ═══ */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-16) var(--space-8);
-  text-align: center;
-  color: var(--text-tertiary);
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-primary);
-  border-top: 4px solid var(--accent-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: var(--space-4);
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-container p {
-  color: var(--text-secondary);
-  font-size: var(--text-base);
-  margin: 0;
-}
-
-/* ═══ EMPTY STATE ═══ */
-.empty-state {
-  padding: var(--space-16) var(--space-8);
-  text-align: center;
-  color: var(--text-tertiary);
-}
-
-.empty-state .material-icons {
-  font-size: 4rem;
-  margin-bottom: var(--space-4);
-  opacity: 0.5;
-  color: var(--accent-primary);
-}
-
-.empty-state p {
-  color: var(--text-secondary);
-  font-size: var(--text-base);
-  margin: 0;
-}
-
-/* ═══ PAGINATION ═══ */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--card-bg);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-primary);
-}
-
-.pagination-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-primary);
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: var(--gradient-purple);
-  border-color: var(--accent-primary);
-  color: var(--color-white);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow-purple);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-info {
-  font-size: var(--text-base);
-  color: var(--text-secondary);
-  font-weight: var(--font-medium);
-  padding: 0 var(--space-4);
-}
-
-/* ═══ BUTTONS ═══ */
-.btn {
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-lg);
-  border: none;
-  font-weight: var(--font-semibold);
-  font-size: var(--text-sm);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: var(--gradient-primary);
-  color: var(--color-white);
-  box-shadow: var(--shadow-btn);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-glow-purple);
-}
-
-.btn .material-icons {
-  font-size: var(--text-lg);
-}
-
-/* ═══ RESPONSIVE ═══ */
-@media (max-width: 1024px) {
-  .product-variants-page {
-    padding: var(--space-6) var(--space-3);
+  75% {
+    background-color: rgba(255, 255, 0, 0.5);
+    box-shadow: 0 0 6px rgba(255, 255, 0, 0.4);
   }
-  
-  .filter-row {
-    grid-template-columns: 1fr 1fr;
+  100% {
+    background-color: transparent;
+    box-shadow: none;
   }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .product-variants-page {
-    padding: var(--space-4);
-  }
-
-  .page-header {
-    padding: var(--space-5);
-  }
-
-  .header-content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-4);
-  }
-
-  .page-title {
-    font-size: var(--text-2xl);
-  }
-  
-  .page-title .material-icons {
-    font-size: 1.5rem;
-  }
-  
-  .header-actions {
-    width: 100%;
-  }
-  
-  .header-actions .btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .filter-row {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-  }
-
-  .variants-table {
-    font-size: var(--text-sm);
-  }
-
-  .variants-table th,
-  .variants-table td {
-    padding: var(--space-3) var(--space-2);
-  }
-
-  .variant-image {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .sku-code {
-    font-size: var(--text-xs);
-  }
-  
-  .size-badge {
-    padding: var(--space-1) var(--space-2);
-    font-size: var(--text-xs);
-    min-width: 32px;
-  }
-  
-  .price,
-  .stock-quantity {
-    font-size: var(--text-base);
-  }
-}
-
-@media (max-width: 480px) {
-  .variants-table th,
-  .variants-table td {
-    padding: var(--space-2);
-    font-size: var(--text-xs);
-  }
-  
-  .variant-image {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-  
 }
 </style>
-

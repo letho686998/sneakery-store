@@ -175,7 +175,8 @@ export const useAdminStore = defineStore('admin', () => {
 
   const getProductById = async (id) => {
     try {
-      loading.value = true
+      // ✅ Không set loading ở đây để tránh trigger reload danh sách
+      // Mỗi component tự quản lý loading state của riêng mình
       error.value = null
       
       const product = await AdminService.getProductById(id)
@@ -183,8 +184,6 @@ export const useAdminStore = defineStore('admin', () => {
     } catch (err) {
       error.value = err.message || 'Lỗi khi tải chi tiết sản phẩm'
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
@@ -320,6 +319,36 @@ export const useAdminStore = defineStore('admin', () => {
       return user
     } catch (err) {
       error.value = err.message || 'Lỗi khi cập nhật quyền người dùng'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const createUser = async (userData) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const user = await AdminService.createUser(userData)
+      return user
+    } catch (err) {
+      error.value = err.message || 'Lỗi khi tạo người dùng'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteUser = async (id) => {
+    try {
+      loading.value = true
+      error.value = null
+      
+      await AdminService.deleteUser(id)
+      return true
+    } catch (err) {
+      error.value = err.message || 'Lỗi khi xóa người dùng'
       throw err
     } finally {
       loading.value = false
@@ -557,9 +586,9 @@ const createSole = async (soleData) => {
     const sole = await AdminService.createSole(soleData)
     // ✅ Cập nhật reactive list đúng cách
     if (soles.value) {
-      soles.value = [...soles.value, soles]
+      soles.value = [...soles.value, sole]
     } else {
-      soles.value = [soles]
+      soles.value = [sole]
     }
     return sole
   } catch (err) {
@@ -637,10 +666,10 @@ const deleteSole = async (id) => {
   }
 
   // ===== PRODUCT VARIANTS =====
-  const fetchProductVariants = async (page = 0, size = 10, filters = {}) => {
+  const fetchProductVariants = async (page = 0, size = 10, filters = {}, sortBy = null, sortDirection = 'asc') => {
     try {
       loading.value = true
-      const result = await AdminService.getProductVariants(page, size, filters)
+      const result = await AdminService.getProductVariants(page, size, filters, sortBy, sortDirection)
       return result
     } catch (error) {
       console.error('Error fetching product variants:', error)
@@ -675,6 +704,21 @@ const deleteSole = async (id) => {
       loading.value = false
     }
   }
+
+  // ✅ ====== TẠO NHIỀU BIẾN THỂ CÙNG LÚC ======
+  const createMultipleProductVariants = async (variantList) => {
+    try {
+      loading.value = true
+      const result = await AdminService.createMultipleProductVariants(variantList)
+      return result
+    } catch (error) {
+      console.error('Error creating multiple product variants:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
 
   const updateProductVariant = async (id, variantData) => {
     try {
@@ -714,6 +758,21 @@ const deleteSole = async (id) => {
       loading.value = false
     }
   }
+
+  // ===== VARIANT IMAGES =====
+  const fetchVariantImages = async (variantId) => {
+    try {
+      loading.value = true;
+      const result = await AdminService.getVariantImages(variantId);
+      return result || [];
+    } catch (error) {
+      console.error("Error fetching variant images:", error);
+      return [];
+    } finally {
+      loading.value = false;
+    }
+  };
+
 
   // ===== ACTIVITY LOGS =====
   const fetchActivityLogs = async (page = 0, size = 10, filters = {}) => {
@@ -888,6 +947,19 @@ const deleteSole = async (id) => {
     }
   }
 
+  const getUserLoyaltyBalance = async (userId) => {
+    try {
+      loading.value = true
+      const result = await AdminService.getUserLoyaltyBalance(userId)
+      return result
+    } catch (error) {
+      console.error('Error fetching user loyalty balance:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ===== PAYMENTS =====
   const fetchPayments = async (page = 0, size = 10, filters = {}) => {
     try {
@@ -990,6 +1062,21 @@ const deleteSole = async (id) => {
       return result
     } catch (error) {
       console.error('Error creating POS order:', error)
+      // Re-throw error để component có thể handle
+      // Error từ AdminService.handleError() đã được format thành { message, status, data }
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const fetchPOSOrders = async (page = 0, size = 20) => {
+    try {
+      loading.value = true
+      const result = await AdminService.getPOSOrders(page, size)
+      return result
+    } catch (error) {
+      console.error('Error fetching POS orders:', error)
       throw error
     } finally {
       loading.value = false
@@ -1209,6 +1296,21 @@ const deleteSole = async (id) => {
     }
   }
 
+  // ===== RETURN CONDITIONS (Sản phẩm tốt / hỏng) =====
+  const confirmReturnConditions = async (payload) => {
+    try {
+      loading.value = true
+
+      const result = await AdminService.confirmReturnConditions(payload)
+      return result
+    } catch (error) {
+      console.error("❌ Error confirmReturnConditions:", error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ===== WARRANTY =====
   const fetchWarranties = async (page = 0, size = 10, filters = {}) => {
     try {
@@ -1302,6 +1404,19 @@ const deleteSole = async (id) => {
     }
   }
 
+  const validateCoupon = async (code) => {
+    try {
+      loading.value = true
+      const result = await AdminService.validateCoupon(code)
+      return result
+    } catch (error) {
+      console.error('Error validating coupon:', error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   const toggleCouponStatus = async (id) => {
     try {
       loading.value = true
@@ -1368,6 +1483,8 @@ const deleteSole = async (id) => {
     fetchUsers,
     updateUserStatus,
     updateUserRole,
+    createUser,
+    deleteUser,
     fetchBrands,
     createBrand,
     updateBrand,
@@ -1395,9 +1512,11 @@ const deleteSole = async (id) => {
     fetchProductVariants,
     fetchProductVariantStats,
     createProductVariant,
+    createMultipleProductVariants, // ✅ thêm dòng này
     updateProductVariant,
     deleteProductVariant,
     updateVariantStock,
+    fetchVariantImages,
     fetchActivityLogs,
     exportActivityLogs,
     fetchEmailTemplates,
@@ -1411,6 +1530,7 @@ const deleteSole = async (id) => {
     fetchLoyaltyUsers,
     adjustLoyaltyPoints,
     fetchLoyaltyStats,
+    getUserLoyaltyBalance,
     fetchPayments,
     refundPayment,
     fetchPaymentStats,
@@ -1419,6 +1539,7 @@ const deleteSole = async (id) => {
     fetchSettings,
     updateSettings,
     createPOSOrder,
+    fetchPOSOrders,
     
     // New Actions - Reviews
     fetchReviews,
@@ -1443,6 +1564,7 @@ const deleteSole = async (id) => {
     fetchReturns,
     updateReturnStatus,
     processRefund,
+    confirmReturnConditions,
     
     // New Actions - Warranty
     fetchWarranties,
@@ -1455,6 +1577,7 @@ const deleteSole = async (id) => {
     updateCoupon,
     deleteCoupon,
     toggleCouponStatus,
+    validateCoupon,
     
     clearError,
     reset

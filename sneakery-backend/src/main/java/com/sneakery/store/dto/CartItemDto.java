@@ -10,11 +10,12 @@ import java.math.BigDecimal;
 public class CartItemDto {
     private Long cartItemId;
     private Long variantId;
+    private String sku;
     private String productName;
     private String brandName;
     private String size;
     private String color;
-    private String imageUrl;
+//    private String imageUrl;
     private int quantity;
     private BigDecimal unitPrice; // Giá của 1 sản phẩm (đã sale nếu có)
     private BigDecimal totalPrice; // quantity * unitPrice

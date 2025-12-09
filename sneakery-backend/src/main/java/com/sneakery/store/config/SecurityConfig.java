@@ -2,10 +2,12 @@ package com.sneakery.store.config;
 
 import com.sneakery.store.security.CustomUserDetailsService;
 import com.sneakery.store.security.JwtAuthenticationFilter;
+// Rate limiting filter - tạm thời comment để tránh lỗi compile với Bucket4j
+// import com.sneakery.store.security.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Import HttpMethod
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,119 +24,101 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true) // Bật @PreAuthorize
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter; // "Người gác cổng" JWT
-    private final CustomUserDetailsService userDetailsService; // Dịch vụ tải user
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final CustomUserDetailsService userDetailsService;
+    // Rate limiting filter - tạm thời comment để tránh lỗi compile với Bucket4j
+    // private final RateLimitingFilter rateLimitingFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Tắt CSRF vì dùng JWT
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Bật CORS với cấu hình chi tiết
-
-                // Cấu hình quy tắc truy cập
+                // CSRF protection disabled for REST APIs with JWT
+                // JWT tokens provide CSRF protection inherently
+                // For state-changing operations, JWT validation is sufficient
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Các API Public (Không cần đăng nhập)
-                        .requestMatchers("/api/auth/**").permitAll() // API Đăng nhập/Đăng ký
-                        .requestMatchers("/api/test/**").permitAll() // TEST API - CHỈ DÙNG CHO DEBUG, XÓA KHI PRODUCTION!
+                        // 1. Cho phép OPTIONS requests (CORS preflight) - không cần authentication
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // 2. Các API Public (Không cần đăng nhập)
+                        .requestMatchers("/api/auth/**").permitAll() // API Đăng nhập/Đăng ký/Reset Password
+                        // TestController chỉ hoạt động trong dev profile (đã có @Profile("dev"))
+                        // Cho phép test endpoints trong dev (sẽ tự động disable trong production nhờ @Profile)
+                        .requestMatchers("/api/test/**").permitAll() // Test endpoints (chỉ hoạt động trong dev profile)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html").permitAll() // Swagger
 
-                        // 2. API Product & Review (Chỉ cho phép GET public)
+                        // ✅ Cho phép GET public cho Product
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
-                        // 3. Tất cả API còn lại
-                        // (POST/PUT /api/products, /api/cart, /api/orders, /api/addresses...)
-                        .anyRequest().authenticated() // Đều phải đăng nhập
-                )
+                        // ✅ Cho phép GET public cho Flash Sales
+                        .requestMatchers(HttpMethod.GET, "/api/flash-sales/**").permitAll()
 
-                // Cấu hình Session
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Không dùng Session
-                )
+                        // ✅ Cho phép GET public cho Reviews (approved testimonials)
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/approved").permitAll()
 
-                // Cung cấp AuthenticationProvider (dùng CSDL)
+                        // ✅ Cho phép Guest APIs (không cần authentication)
+                        .requestMatchers("/api/guest/**").permitAll()
+                        
+                        // ✅ Cho phép truy cập static files (uploads)
+                        .requestMatchers("/uploads/**").permitAll()
+
+                        // ❌ Các request khác yêu cầu xác thực
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authenticationProvider(authenticationProvider())
-
-                // Thêm Filter JWT vào chuỗi
+                // Rate limiting filter - tạm thời comment để tránh lỗi compile với Bucket4j                // 
+                // .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * Bean để mã hoá mật khẩu
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * Bean cung cấp cơ chế xác thực (dùng CSDL)
-     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService); // Cung cấp cách lấy user
-        authProvider.setPasswordEncoder(passwordEncoder()); // Cung cấp cách so sánh pass
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
-    /**
-     * Bean quản lý việc xác thực (cần cho API /login)
-     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * Cấu hình CORS cho phép frontend truy cập
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Cho phép các origin (frontend URLs)
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",  // Vite dev server mặc định
-            "http://localhost:5174",  // Vite dev server port thay thế
-            "http://localhost:3000"   // React/Next.js dev server
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of(
+                "http://localhost:5173", // ✅ Vite
+                "http://localhost:5174",
+                "http://localhost:3000"
         ));
-        
-        // Cho phép các HTTP methods
-        configuration.setAllowedMethods(Arrays.asList(
-            "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
-        ));
-        
-        // Cho phép các headers
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", 
-            "Content-Type", 
-            "Accept",
-            "X-Requested-With"
-        ));
-        
-        // Cho phép gửi credentials (cookies, authorization headers)
-        configuration.setAllowCredentials(true);
-        
-        // Thời gian cache preflight request (giây)
-        configuration.setMaxAge(3600L);
-        
-        // Expose headers cho client đọc được
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        
-        // Áp dụng cấu hình cho tất cả các endpoints
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        cfg.setExposedHeaders(List.of("Authorization"));
+        cfg.setAllowCredentials(true);
+        cfg.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        
+        source.registerCorsConfiguration("/**", cfg);
         return source;
     }
 }

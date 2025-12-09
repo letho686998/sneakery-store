@@ -5,7 +5,8 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import notificationService from '@/services/notificationService';
+import userService from '@/services/userService';
+import logger from '@/utils/logger';
 
 export const useNotificationStore = defineStore('notification', () => {
     // State
@@ -31,7 +32,7 @@ export const useNotificationStore = defineStore('notification', () => {
         error.value = null;
 
         try {
-            const data = await notificationService.getNotifications(page, size);
+            const data = await userService.getNotifications(page, size);
             
             if (page === 0) {
                 notifications.value = data.content;
@@ -42,10 +43,10 @@ export const useNotificationStore = defineStore('notification', () => {
             currentPage.value = data.number;
             totalPages.value = data.totalPages;
             
-            console.log(`✅ Fetched ${data.content.length} notifications`);
+            logger.log(`✅ Fetched ${data.content.length} notifications`);
         } catch (err) {
             error.value = err.response?.data?.message || 'Không thể tải thông báo';
-            console.error('❌ Error fetching notifications:', err);
+            logger.error('❌ Error fetching notifications:', err);
         } finally {
             loading.value = false;
         }
@@ -56,11 +57,11 @@ export const useNotificationStore = defineStore('notification', () => {
      */
     const fetchUnreadCount = async () => {
         try {
-            const count = await notificationService.getUnreadCount();
+            const count = await userService.getUnreadCount();
             unreadCount.value = count;
-            console.log(`✅ Unread notifications: ${count}`);
+            logger.log(`✅ Unread notifications: ${count}`);
         } catch (err) {
-            console.error('❌ Error fetching unread count:', err);
+            logger.error('❌ Error fetching unread count:', err);
         }
     };
 
@@ -69,7 +70,7 @@ export const useNotificationStore = defineStore('notification', () => {
      */
     const markAsRead = async (notificationId) => {
         try {
-            await notificationService.markAsRead(notificationId);
+            await userService.markAsRead(notificationId);
             
             // Update local state
             const notification = notifications.value.find(n => n.id === notificationId);
@@ -83,9 +84,9 @@ export const useNotificationStore = defineStore('notification', () => {
                 unreadCount.value--;
             }
             
-            console.log(`✅ Marked notification ${notificationId} as read`);
+            logger.log(`✅ Marked notification ${notificationId} as read`);
         } catch (err) {
-            console.error(`❌ Error marking notification ${notificationId} as read:`, err);
+            logger.error(`❌ Error marking notification ${notificationId} as read:`, err);
             throw err;
         }
     };
@@ -95,7 +96,7 @@ export const useNotificationStore = defineStore('notification', () => {
      */
     const markAllAsRead = async () => {
         try {
-            await notificationService.markAllAsRead();
+            await userService.markAllAsRead();
             
             // Update local state
             notifications.value.forEach(n => {
@@ -105,9 +106,9 @@ export const useNotificationStore = defineStore('notification', () => {
             
             unreadCount.value = 0;
             
-            console.log('✅ Marked all notifications as read');
+            logger.log('✅ Marked all notifications as read');
         } catch (err) {
-            console.error('❌ Error marking all notifications as read:', err);
+            logger.error('❌ Error marking all notifications as read:', err);
             throw err;
         }
     };

@@ -1,160 +1,434 @@
 <template>
-  <div class="user-page cart-page">
-    <div class="cart-container">
-      <h1 class="page-title">Giỏ hàng của bạn</h1>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6">
+    <div class="max-w-7xl mx-auto px-4 space-y-6">
+      <!-- Header -->
+      <div
+        class="relative overflow-hidden bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 rounded-xl p-6 shadow-lg"
+      >
+        <div
+          class="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-transparent"
+        ></div>
+        <div class="relative">
+          <h1
+            class="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3"
+          >
+            <div
+              class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center"
+            >
+              <i class="material-icons text-white">shopping_cart</i>
+            </div>
+            Giỏ hàng của bạn
+          </h1>
+          <p
+            class="text-purple-100 text-sm md:text-base"
+            v-if="cart && cart.items.length > 0"
+          >
+            {{ cart.totalItems }} sản phẩm trong giỏ hàng
+          </p>
+          <p class="text-purple-100 text-sm md:text-base" v-else>
+            Quản lý các sản phẩm đã chọn
+          </p>
+        </div>
+      </div>
 
       <!-- Loading State -->
-      <div v-if="loading" class="loading-container">
-        <div class="loading-spinner"></div>
-        <p>Đang tải giỏ hàng...</p>
+      <div v-if="loading" class="space-y-4" role="status" aria-live="polite">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-4">
+            <LoadingSkeleton v-for="n in 3" :key="n" type="list" />
+          </div>
+          <div>
+            <LoadingSkeleton type="custom" :lines="5" />
+          </div>
+        </div>
+        <span class="sr-only">Đang tải giỏ hàng</span>
       </div>
 
       <!-- Empty Cart -->
-      <div v-else-if="!cart || cart.items.length === 0" class="empty-cart">
-        <div class="empty-icon">🛒</div>
-        <h2>Giỏ hàng trống</h2>
-        <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-        <router-link to="/products" class="btn btn-primary">
+      <div
+        v-else-if="!cart || cart.items.length === 0"
+        class="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700"
+      >
+        <div
+          class="w-24 h-24 mx-auto mb-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center"
+        >
+          <i
+            class="material-icons text-5xl text-purple-600 dark:text-purple-400"
+            >shopping_cart</i
+          >
+        </div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          Giỏ hàng trống
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
+          Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm
+        </p>
+        <router-link
+          to="/home/products"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02]"
+        >
+          <i class="material-icons text-lg">shopping_bag</i>
           Xem sản phẩm
         </router-link>
       </div>
 
       <!-- Cart Items -->
-      <div v-else class="cart-grid">
+      <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Cart Items List -->
-        <div class="cart-items">
+        <div class="lg:col-span-2 space-y-4">
           <div
             v-for="item in cart.items"
             :key="item.cartItemId"
-            class="cart-item"
+            class="group bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200 hover:translate-y-[-2px]"
           >
-            <div class="item-image">
-              <img :src="item.imageUrl || '/placeholder-image.png'" :alt="item.productName" />
-            </div>
-
-            <div class="item-info">
-              <h3 class="item-name">{{ item.productName }}</h3>
-              <p class="item-brand">{{ item.brandName }}</p>
-              <div class="item-variants">
-                <span class="variant-tag">Màu: {{ item.color }}</span>
-                <span class="variant-tag">Size: {{ item.size }}</span>
-              </div>
-              <p class="item-price">{{ formatPrice(item.unitPrice) }}</p>
-            </div>
-
-            <div class="item-actions">
-              <!-- Quantity Controls -->
-              <div class="quantity-controls">
-                <button @click="updateQuantity(item, item.quantity - 1)" :disabled="item.quantity <= 1">
-                  -
-                </button>
-                <input v-model.number="item.quantity" type="number" min="1" readonly />
-                <button @click="updateQuantity(item, item.quantity + 1)">+</button>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <div
+                class="w-full sm:w-28 h-28 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0"
+              >
+                <img
+                  :src="item.imageUrl || '/placeholder-image.png'"
+                  :alt="item.productName"
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
 
-              <!-- Total Price -->
-              <p class="item-total">{{ formatPrice(item.totalPrice) }}</p>
+              <div
+                class="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+              >
+                <div class="flex-1 min-w-0">
+                  <h3
+                    class="font-semibold text-gray-900 dark:text-gray-100 mb-1 line-clamp-2"
+                  >
+                    {{ item.productName }}
+                  </h3>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    {{ item.brandName }}
+                  </p>
+                  <div class="flex flex-wrap gap-2 mb-3">
+                    <span
+                      class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1"
+                    >
+                      <i class="material-icons text-xs">palette</i>
+                      {{ item.color }}
+                    </span>
+                    <span
+                      class="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs text-gray-700 dark:text-gray-300 font-medium flex items-center gap-1"
+                    >
+                      <i class="material-icons text-xs">straighten</i>
+                      {{ item.size }}
+                    </span>
+                  </div>
+                  <p
+                    class="font-semibold text-lg text-purple-600 dark:text-purple-400"
+                  >
+                    {{ formatPrice(item.unitPrice) }}
+                  </p>
+                </div>
 
-              <!-- Remove Button -->
-              <button @click="removeItem(item)" class="btn-remove">
-                Xóa
-              </button>
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center gap-4 flex-shrink-0"
+                >
+                  <!-- Quantity Controls -->
+                  <div
+                    class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-1"
+                  >
+                    <button
+                      @click="updateQuantity(item, item.quantity - 1)"
+                      :disabled="item.quantity <= 1"
+                      class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      aria-label="Giảm số lượng"
+                    >
+                      <i class="material-icons text-base">remove</i>
+                    </button>
+                    <div
+                      class="w-12 h-9 flex items-center justify-center border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                    >
+                      <span
+                        class="text-base font-semibold text-gray-900 dark:text-gray-100"
+                        >{{ item.quantity }}</span
+                      >
+                    </div>
+                    <button
+                      @click="updateQuantity(item, item.quantity + 1)"
+                      class="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      aria-label="Tăng số lượng"
+                    >
+                      <i class="material-icons text-base">add</i>
+                    </button>
+                  </div>
+
+                  <!-- Total Price -->
+                  <div class="text-right sm:text-left">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Tổng
+                    </p>
+                    <p
+                      class="font-bold text-xl text-gray-900 dark:text-gray-100"
+                    >
+                      {{ formatPrice(item.totalPrice) }}
+                    </p>
+                  </div>
+
+                  <!-- Remove Button -->
+                  <button
+                    @click="removeItem(item)"
+                    class="w-10 h-10 rounded-lg border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all flex items-center justify-center flex-shrink-0"
+                    aria-label="Xóa sản phẩm"
+                  >
+                    <i class="material-icons text-lg">delete</i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Cart Summary -->
-        <div class="cart-summary">
-          <h2>Tổng đơn hàng</h2>
-
-          <!-- Coupon Input -->
-          <div class="coupon-section">
-            <div class="coupon-input-group">
-              <input
-                v-model="couponCode"
-                type="text"
-                placeholder="Nhập mã giảm giá"
-                class="coupon-input"
-                :disabled="couponApplied"
-              />
-              <button
-                @click="applyCoupon"
-                :disabled="!couponCode || couponApplied || applyingCoupon"
-                class="btn btn-primary btn-apply-coupon"
+        <div class="lg:col-span-1">
+          <div
+            class="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 lg:sticky lg:top-24"
+          >
+            <h2
+              class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2"
+            >
+              <i class="material-icons text-purple-600 dark:text-purple-400"
+                >receipt</i
               >
-                {{ applyingCoupon ? 'Đang áp dụng...' : (couponApplied ? 'Đã áp dụng' : 'Áp dụng') }}
-              </button>
+              Tổng đơn hàng
+            </h2>
+
+            <!-- Coupon Selection -->
+            <div class="mb-6">
+              <label
+                class="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2"
+                >Mã giảm giá</label
+              >
+              <div class="flex gap-2 mb-2">
+                <select
+                  v-model="selectedCouponCode"
+                  @change="onCouponSelected"
+                  class="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all max-w-full text-sm truncate"
+                  :disabled="couponApplied || loadingActiveCoupons"
+                  style="max-width: 73%"
+                >
+                  <option value="">-- Chọn mã giảm giá --</option>
+                  <option
+                    v-for="coupon in activeCoupons"
+                    :key="coupon.id"
+                    :value="coupon.code"
+                    :disabled="
+                      coupon.minOrderAmount &&
+                      cart.subTotal < coupon.minOrderAmount
+                    "
+                    :title="getCouponFullText(coupon)"
+                  >
+                    {{ getCouponDisplayText(coupon) }}
+                  </option>
+                </select>
+                <button
+                  v-if="couponApplied"
+                  @click="removeCoupon"
+                  class="px-4 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center gap-2"
+                >
+                  <i class="material-icons text-lg">close</i>
+                  <span>Xóa</span>
+                </button>
+              </div>
+              <div
+                v-if="loadingActiveCoupons"
+                class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2"
+              >
+                <div
+                  class="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"
+                ></div>
+                Đang tải danh sách mã giảm giá...
+              </div>
+              <div
+                v-if="!loadingActiveCoupons && activeCoupons.length === 0"
+                class="text-xs text-gray-500 dark:text-gray-400 mt-2"
+              >
+                Hiện không có mã giảm giá nào đang hoạt động
+              </div>
+              <div
+                v-if="couponError"
+                class="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
+              >
+                <i class="material-icons text-base">error</i>
+                {{ couponError }}
+              </div>
+              <div
+                v-if="couponApplied && appliedCoupon"
+                class="flex items-center justify-between gap-2 text-sm bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mt-2 border border-green-200 dark:border-green-800"
+              >
+                <div class="flex items-center gap-2">
+                  <i class="material-icons text-base">check_circle</i>
+                  <span class="font-medium">
+                    Đã áp dụng mã "{{ appliedCoupon.code }}"
+                    <span v-if="appliedCoupon.discountType === 'percent'">
+                      (-{{ appliedCoupon.value }}%)
+                    </span>
+                    <span v-else>
+                      (-{{ formatPrice(appliedCoupon.value) }})
+                    </span>
+                  </span>
+                </div>
+              </div>
             </div>
-            <div v-if="couponError" class="coupon-error">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              {{ couponError }}
+
+            <div
+              class="border-t border-gray-200 dark:border-gray-700 my-4"
+            ></div>
+
+            <div class="space-y-3 mb-4">
+              <!-- Subtotal -->
+              <div
+                class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+              >
+                <span class="flex items-center gap-2">
+                  <i class="material-icons text-xs">inventory_2</i>
+                  Tạm tính ({{ cart.totalItems }} sản phẩm)
+                </span>
+                <span class="text-gray-900 dark:text-gray-100 font-semibold">{{
+                  formatPrice(cart.subTotal)
+                }}</span>
+              </div>
+
+              <!-- Coupon Discount -->
+              <div
+                v-if="couponApplied && appliedCoupon"
+                class="flex justify-between text-sm text-green-600 dark:text-green-400"
+              >
+                <span class="flex items-center gap-2">
+                  <i class="material-icons text-xs">local_offer</i>
+                  Giảm giá ({{ appliedCoupon.code }})
+                </span>
+                <span class="font-semibold"
+                  >-{{ formatPrice(discountAmount) }}</span
+                >
+              </div>
+
+              <!-- Amount After Discount -->
+              <div
+                v-if="couponApplied && appliedCoupon"
+                class="flex justify-between text-xs text-gray-500 dark:text-gray-500 pt-1 border-t border-gray-200 dark:border-gray-700"
+              >
+                <span class="italic">Sau giảm giá</span>
+                <span class="italic">{{
+                  formatPrice(cart.subTotal - discountAmount)
+                }}</span>
+              </div>
+
+              <!-- VAT (10%) -->
+              <div
+                class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+              >
+                <span class="flex items-center gap-2">
+                  <i class="material-icons text-xs">receipt</i>
+                  VAT (10%)
+                </span>
+                <span class="text-gray-900 dark:text-gray-100 font-semibold">
+                  {{
+                    formatPrice(
+                      Math.max(0, (cart.subTotal - discountAmount) * 0.1)
+                    )
+                  }}
+                </span>
+              </div>
+
+              <!-- Shipping Fee -->
+              <!-- <div
+                class="flex justify-between text-sm text-gray-600 dark:text-gray-400"
+              >
+                <span class="flex items-center gap-2">
+                  <i class="material-icons text-xs">local_shipping</i>
+                  Phí vận chuyển
+                </span>
+                <span
+                  :class="[
+                    'font-semibold',
+                    shippingFee === 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : 'text-gray-900 dark:text-gray-100',
+                  ]"
+                >
+                  {{
+                    shippingFee === 0 ? "Miễn phí" : formatPrice(shippingFee)
+                  }}
+                </span>
+              </div> -->
             </div>
-            <div v-if="couponApplied" class="coupon-success">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Đã áp dụng mã "{{ couponCode }}" (-{{ couponDiscount }}%)
-              <button @click="removeCoupon" class="btn-remove-coupon">Xóa</button>
+
+            <div
+              class="border-t-2 border-gray-300 dark:border-gray-600 my-4"
+            ></div>
+
+            <div
+              class="flex justify-between items-center mb-6 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg"
+            >
+              <span
+                class="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"
+              >
+                <i class="material-icons text-purple-600 dark:text-purple-400"
+                  >attach_money</i
+                >
+                Tổng cộng
+              </span>
+              <span
+                class="text-2xl font-bold text-purple-600 dark:text-purple-400"
+                >{{ formatPrice(totalAmount) }}</span
+              >
             </div>
-          </div>
-          
-          <div class="summary-divider"></div>
 
-          <div class="summary-row">
-            <span>Tạm tính ({{ cart.totalItems }} sản phẩm)</span>
-            <span>{{ formatPrice(cart.subTotal) }}</span>
-          </div>
+            <button
+              @click="proceedToCheckout"
+              class="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] mb-3"
+            >
+              <i class="material-icons text-lg">shopping_bag</i>
+              Tiến hành thanh toán
+            </button>
 
-          <div v-if="couponApplied" class="summary-row discount-row">
-            <span>Giảm giá (-{{ couponDiscount }}%)</span>
-            <span class="discount-amount">-{{ formatPrice(discountAmount) }}</span>
-          </div>
+            <router-link
+              to="/home/products"
+              class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 transition-all"
+            >
+              <i class="material-icons text-lg">arrow_back</i>
+              Tiếp tục mua sắm
+            </router-link>
 
-          <div class="summary-row">
-            <span>Phí vận chuyển</span>
-            <span :class="{ 'free-shipping': shippingFee === 0 }">
-              {{ shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee) }}
-            </span>
-          </div>
-
-          <div class="summary-divider"></div>
-
-          <div class="summary-row total-row">
-            <span>Tổng cộng</span>
-            <span class="total-price">{{ formatPrice(totalAmount) }}</span>
-          </div>
-
-          <button @click="proceedToCheckout" class="btn btn-gradient btn-checkout">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14"></path>
-              <path d="m12 5 7 7-7 7"></path>
-            </svg>
-            Tiến hành thanh toán
-          </button>
-
-          <router-link to="/products" class="btn btn-outline btn-continue">
-            Tiếp tục mua sắm
-          </router-link>
-
-          <!-- Free Shipping Indicator -->
-          <div v-if="cart.subTotal >= 500000" class="free-shipping-indicator">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="1" y="3" width="15" height="13"></rect>
-              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-              <circle cx="5.5" cy="18.5" r="2.5"></circle>
-              <circle cx="18.5" cy="18.5" r="2.5"></circle>
-            </svg>
-            Đơn hàng đủ điều kiện giao hàng miễn phí!
-          </div>
-          <div v-else class="shipping-progress">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: shippingProgress + '%' }"></div>
+            <!-- Free Shipping Indicator -->
+            <!-- <div
+              v-if="cart.subTotal >= 500000"
+              class="mt-4 flex items-center gap-2 px-4 py-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg border border-green-200 dark:border-green-800"
+            >
+              <i class="material-icons text-lg">local_shipping</i>
+              <span class="text-sm font-medium"
+                >Đơn hàng đủ điều kiện giao hàng miễn phí!</span
+              >
             </div>
-            <p>Mua thêm {{ formatPrice(500000 - cart.subTotal) }} để được giao hàng miễn phí</p>
+            <div
+              v-else
+              class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+            >
+              <div
+                class="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden mb-2"
+              >
+                <div
+                  class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300 rounded-full"
+                  :style="{ width: shippingProgress + '%' }"
+                ></div>
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400 text-center">
+                <i class="material-icons text-xs align-middle"
+                  >local_shipping</i
+                >
+                Mua thêm
+                <span
+                  class="font-semibold text-purple-600 dark:text-purple-400"
+                  >{{ formatPrice(500000 - cart.subTotal) }}</span
+                >
+                để được giao hàng miễn phí
+              </p>
+            </div> -->
           </div>
         </div>
       </div>
@@ -163,23 +437,44 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import axios from 'axios';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { useCartStore } from "@/stores/cart";
+import { useCouponStore } from "@/stores/coupon";
+import notificationService from "@/utils/notificationService";
+import confirmDialogService from "@/utils/confirmDialogService";
+import logger from "@/utils/logger";
+import couponService from "@/services/couponService";
+import LoadingSkeleton from "@/components/common/LoadingSkeleton.vue";
+import { formatPrice } from "@/utils/formatters";
+import axios from "axios";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const cartStore = useCartStore();
+const couponStore = useCouponStore();
 
-// State
-const cart = ref(null);
-const loading = ref(true);
-const couponCode = ref('');
-const couponApplied = ref(false);
-const couponDiscount = ref(0);
-const couponError = ref('');
+// Local state
 const applyingCoupon = ref(false);
+const activeCoupons = ref([]);
+const loadingActiveCoupons = ref(false);
+const selectedCouponCode = ref("");
+
+// Use coupon store state
+const couponCode = computed({
+  get: () => couponStore.couponCode,
+  set: (value) => {
+    couponStore.couponCode = value;
+  },
+});
+const couponApplied = computed(() => couponStore.hasCoupon);
+const couponError = computed(() => couponStore.couponError);
+const appliedCoupon = computed(() => couponStore.appliedCoupon);
+
+// Computed từ cart store
+const cart = computed(() => cartStore.cart);
+const loading = computed(() => cartStore.loading);
 
 // Computed
 const shippingFee = computed(() => {
@@ -195,30 +490,62 @@ const shippingProgress = computed(() => {
 });
 
 const discountAmount = computed(() => {
-  if (!cart.value || !couponApplied.value) return 0;
-  return (cart.value.subTotal * couponDiscount.value) / 100;
+  if (!cart.value || !couponApplied.value || !appliedCoupon.value) return 0;
+
+  // Calculate discount based on coupon type
+  return couponService.calculateDiscount(
+    appliedCoupon.value,
+    cart.value.subTotal
+  );
+});
+
+// Calculate VAT (10% on amount after discount)
+const taxAmount = computed(() => {
+  if (!cart.value) return 0;
+  const amountAfterDiscount = cart.value.subTotal - discountAmount.value;
+  return Math.max(0, amountAfterDiscount * 0.1);
 });
 
 const totalAmount = computed(() => {
   if (!cart.value) return 0;
-  return cart.value.subTotal - discountAmount.value + shippingFee.value;
+  // Backend logic:
+  // 1. subtotal - discount = amountAfterDiscount
+  // 2. VAT = amountAfterDiscount * 0.10
+  // 3. total = amountAfterDiscount + shippingFee + VAT
+  const amountAfterDiscount = cart.value.subTotal - discountAmount.value;
+  return amountAfterDiscount + shippingFee.value + taxAmount.value;
 });
+
+const loadVariantImagesForCart = async () => {
+  try {
+    if (!cart.value || !cart.value.items) return;
+
+    for (const item of cart.value.items) {
+      try {
+        const res = await axios.get(`/api/variant-images/${item.variantId}`);
+        const images = res.data;
+
+        // 🔥 lấy ảnh đầu tiên theo displayOrder hoặc index 0
+        item.imageUrl =
+          images?.sort(
+            (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)
+          )[0]?.imageUrl || item.imageUrl;
+      } catch (e) {
+        console.error("Error fetching variant image:", e);
+      }
+    }
+  } catch (err) {
+    console.error("Error loading all variant images:", err);
+  }
+};
 
 // Methods
 const fetchCart = async () => {
   try {
-    loading.value = true;
-    const response = await axios.get('http://localhost:8080/api/cart', {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`,
-      },
-    });
-    cart.value = response.data;
+    await cartStore.fetchCart();
   } catch (error) {
-    console.error('Error fetching cart:', error);
-    ElMessage.error('Không thể tải giỏ hàng');
-  } finally {
-    loading.value = false;
+    logger.error("Error fetching cart:", error);
+    notificationService.error("Lỗi", error.message || "Không thể tải giỏ hàng");
   }
 };
 
@@ -226,632 +553,229 @@ const updateQuantity = async (item, newQuantity) => {
   if (newQuantity < 1) return;
 
   try {
-    await axios.post(
-      'http://localhost:8080/api/cart/item',
-      {
-        variantId: item.variantId,
-        quantity: newQuantity,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${authStore.token}`,
-        },
-      }
-    );
-
-    // Refresh cart
-    await fetchCart();
-    ElMessage.success('Đã cập nhật số lượng');
+    await cartStore.updateQuantity(item.variantId, newQuantity);
+    notificationService.success("Thành công", "Đã cập nhật số lượng");
   } catch (error) {
-    console.error('Error updating quantity:', error);
-    ElMessage.error('Không thể cập nhật số lượng');
+    logger.error("Error updating quantity:", error);
+    notificationService.error(
+      "Lỗi",
+      error.message || "Không thể cập nhật số lượng"
+    );
   }
 };
 
 const removeItem = async (item) => {
   try {
-    await ElMessageBox.confirm(
+    await confirmDialogService.confirm(
       `Bạn có chắc muốn xóa "${item.productName}" khỏi giỏ hàng?`,
-      'Xác nhận',
+      "Xác nhận",
       {
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy',
-        type: 'warning',
+        confirmButtonText: "Xóa",
+        cancelButtonText: "Hủy",
+        type: "warning",
       }
     );
 
-    await axios.delete(`http://localhost:8080/api/cart/item/${item.variantId}`, {
-      headers: {
-        Authorization: `Bearer ${authStore.token}`,
-      },
-    });
-
-    await fetchCart();
-    ElMessage.success('Đã xóa sản phẩm khỏi giỏ hàng');
+    await cartStore.removeItem(item.variantId);
+    // 🧹 Xóa coupon khi có thay đổi giỏ hàng
+    if (couponApplied.value) {
+      removeCoupon();
+    }
+    notificationService.success("Thành công", "Đã xóa sản phẩm khỏi giỏ hàng");
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Error removing item:', error);
-      ElMessage.error('Không thể xóa sản phẩm');
+    if (error !== "cancel") {
+      logger.error("Error removing item:", error);
+      notificationService.error(
+        "Lỗi",
+        error.message || "Không thể xóa sản phẩm"
+      );
     }
   }
 };
 
-const applyCoupon = async () => {
-  if (!couponCode.value) return;
-
+const fetchActiveCoupons = async () => {
   try {
-    applyingCoupon.value = true;
-    couponError.value = '';
+    loadingActiveCoupons.value = true;
+    const coupons = await couponService.getActiveCoupons();
+    activeCoupons.value = coupons || [];
 
-    // Mock coupon validation (replace with real API call later)
-    // For demo: SAVE10 = 10%, SAVE20 = 20%, SAVE30 = 30%
-    const validCoupons = {
-      'SAVE10': 10,
-      'SAVE20': 20,
-      'SAVE30': 30,
-      'FREESHIP': 0 // Just for free shipping demo
-    };
-
-    const code = couponCode.value.toUpperCase();
-    if (validCoupons[code] !== undefined) {
-      couponDiscount.value = validCoupons[code];
-      couponApplied.value = true;
-      ElMessage.success(`Đã áp dụng mã giảm giá ${couponDiscount.value}%`);
-    } else {
-      couponError.value = 'Mã giảm giá không hợp lệ hoặc đã hết hạn';
+    // Nếu có coupon đã apply, set selectedCouponCode
+    if (appliedCoupon.value) {
+      selectedCouponCode.value = appliedCoupon.value.code;
     }
   } catch (error) {
-    console.error('Error applying coupon:', error);
-    couponError.value = 'Không thể áp dụng mã giảm giá';
+    logger.error("Error fetching active coupons:", error);
+    // Không hiển thị error cho user vì không block flow
+    activeCoupons.value = [];
+  } finally {
+    loadingActiveCoupons.value = false;
+  }
+};
+
+const onCouponSelected = async () => {
+  if (!selectedCouponCode.value) {
+    // Nếu chọn "-- Chọn mã giảm giá --", xóa coupon
+    if (couponApplied.value) {
+      removeCoupon();
+    }
+    return;
+  }
+
+  // Apply coupon khi user chọn từ dropdown
+  try {
+    applyingCoupon.value = true;
+    couponStore.setError("");
+
+    // Validate coupon code from API
+    const coupon = await couponService.validateCoupon(
+      selectedCouponCode.value.trim(),
+      cart.value.subTotal
+    );
+
+    // Store coupon info in store
+    couponStore.setCoupon(selectedCouponCode.value.trim(), coupon);
+
+    // Calculate discount
+    const discount = couponService.calculateDiscount(
+      coupon,
+      cart.value.subTotal
+    );
+
+    notificationService.success(
+      "Thành công",
+      `Đã áp dụng mã giảm giá "${
+        coupon.code
+      }" - Giảm ${couponService.formatCurrency(discount)}`
+    );
+
+    logger.log("Coupon applied:", coupon.code, "Discount:", discount);
+  } catch (error) {
+    logger.error("Error applying coupon:", error);
+    couponStore.setError(error.message || "Không thể áp dụng mã giảm giá");
+    couponStore.clearCoupon();
+    selectedCouponCode.value = "";
+    notificationService.error("Lỗi", couponStore.couponError);
   } finally {
     applyingCoupon.value = false;
   }
 };
 
+// Helper functions for coupon display
+const getCouponDisplayText = (coupon, maxLength = 40) => {
+  let text = coupon.code;
+
+  // Thêm giá trị giảm giá (ngắn gọn)
+  if (coupon.discountType === "percent") {
+    text += ` (${coupon.value}%`;
+    if (coupon.maxDiscountAmount) {
+      const maxAmount = formatPrice(coupon.maxDiscountAmount);
+      // Rút ngắn formatPrice nếu quá dài
+      if (maxAmount.length > 15) {
+        text += ` - Max ${(coupon.maxDiscountAmount / 1000000).toFixed(0)}M`;
+      } else {
+        text += ` - Max ${maxAmount}`;
+      }
+    }
+    text += ")";
+  } else {
+    const amount = formatPrice(coupon.value);
+    // Rút ngắn formatPrice nếu quá dài
+    if (amount.length > 15) {
+      text += ` (${(coupon.value / 1000000).toFixed(0)}M)`;
+    } else {
+      text += ` (${amount})`;
+    }
+  }
+
+  // Nếu text quá dài, truncate
+  if (text.length > maxLength) {
+    text = text.substring(0, maxLength - 3) + "...";
+  }
+
+  return text;
+};
+
+const getCouponFullText = (coupon) => {
+  let text = coupon.code;
+
+  if (coupon.description) {
+    text += ` - ${coupon.description}`;
+  }
+
+  if (coupon.discountType === "percent") {
+    text += ` (${coupon.value}%`;
+    if (coupon.maxDiscountAmount) {
+      text += ` - Tối đa ${formatPrice(coupon.maxDiscountAmount)}`;
+    }
+    text += ")";
+  } else {
+    text += ` (${formatPrice(coupon.value)})`;
+  }
+
+  if (coupon.minOrderAmount) {
+    text += ` - Áp dụng cho đơn từ ${formatPrice(coupon.minOrderAmount)}`;
+  }
+
+  return text;
+};
+
 const removeCoupon = () => {
-  couponCode.value = '';
-  couponApplied.value = false;
-  couponDiscount.value = 0;
-  couponError.value = '';
-  ElMessage.info('Đã xóa mã giảm giá');
+  couponStore.clearCoupon();
+  selectedCouponCode.value = "";
+  notificationService.info("Thông tin", "Đã xóa mã giảm giá");
 };
 
-const proceedToCheckout = () => {
-  router.push('/checkout');
+const proceedToCheckout = async () => {
+  try {
+    await router.push("/checkout");
+  } catch (error) {
+    logger.error("Navigation error to checkout:", error);
+    notificationService.error(
+      "Lỗi",
+      "Không thể mở trang thanh toán. Vui lòng thử lại sau."
+    );
+  }
 };
 
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(price);
-};
+// Watch cart subtotal changes - revalidate coupon if needed
+watch(
+  () => cart.value?.subTotal,
+  async (newSubtotal) => {
+    if (appliedCoupon.value && newSubtotal) {
+      // Re-validate coupon when subtotal changes
+      try {
+        const coupon = await couponService.validateCoupon(
+          couponCode.value,
+          newSubtotal
+        );
+        // Update coupon in store if validation passes
+        couponStore.setCoupon(couponCode.value, coupon);
+      } catch (error) {
+        // If validation fails, clear coupon
+        logger.warn("Coupon validation failed after subtotal change:", error);
+        couponStore.clearCoupon();
+        notificationService.warning(
+          "Cảnh báo",
+          "Mã giảm giá không còn hợp lệ với giá trị đơn hàng mới"
+        );
+      }
+    }
+  }
+);
 
 // Lifecycle
-onMounted(() => {
-  fetchCart();
+onMounted(async () => {
+  couponStore.init();
+  await fetchCart(); // tải cart
+  await loadVariantImagesForCart(); // 🔥 tải ảnh variant đầu tiên
+  fetchActiveCoupons();
 });
+
+watch(
+  () => cart.value?.items,
+  async () => {
+    await loadVariantImagesForCart();
+  },
+  { deep: true }
+);
 </script>
-
-<style scoped>
-.cart-page {
-  min-height: 100vh;
-  background: var(--bg-secondary);
-  padding: var(--space-6);
-}
-
-.cart-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.page-title {
-  font-size: var(--text-3xl);
-  font-weight: var(--font-bold);
-  margin-bottom: var(--space-6);
-}
-
-/* Loading */
-.loading-container {
-  text-align: center;
-  padding: var(--space-8);
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid var(--border-color);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto var(--space-4);
-}
-
-/* Empty Cart */
-.empty-cart {
-  text-align: center;
-  padding: var(--space-8);
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-}
-
-.empty-icon {
-  font-size: 80px;
-  margin-bottom: var(--space-4);
-}
-
-.empty-cart h2 {
-  font-size: var(--text-2xl);
-  margin-bottom: var(--space-2);
-}
-
-.empty-cart p {
-  color: var(--text-secondary);
-  margin-bottom: var(--space-6);
-}
-
-/* Cart Grid */
-.cart-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--space-6);
-}
-
-/* Cart Items */
-.cart-items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.cart-item {
-  display: grid;
-  grid-template-columns: 150px 1fr auto;
-  gap: var(--space-4);
-  background: var(--bg-primary);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.item-image {
-  width: 150px;
-  height: 150px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: var(--bg-secondary);
-}
-
-.item-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.item-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.item-name {
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  margin: 0;
-}
-
-.item-brand {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  margin: 0;
-}
-
-.item-variants {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.variant-tag {
-  background: var(--bg-secondary);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-}
-
-.item-price {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  color: var(--primary-color);
-  margin: 0;
-}
-
-.item-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.quantity-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.quantity-controls button {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-primary);
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.quantity-controls button:hover:not(:disabled) {
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.quantity-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.quantity-controls input {
-  width: 50px;
-  height: 32px;
-  text-align: center;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-weight: var(--font-semibold);
-}
-
-.item-total {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  margin: 0;
-}
-
-.btn-remove {
-  padding: var(--space-2) var(--space-4);
-  background: transparent;
-  color: var(--error-color);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-weight: var(--font-medium);
-  transition: all var(--transition-fast);
-}
-
-.btn-remove:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-/* Cart Summary */
-.cart-summary {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(167, 139, 250, 0.15);
-  backdrop-filter: blur(10px);
-  padding: var(--space-6);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-  height: fit-content;
-  position: sticky;
-  top: var(--space-6);
-}
-
-.cart-summary h2 {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  margin-bottom: var(--space-5);
-  color: #f1f5f9;
-}
-
-/* Coupon Section */
-.coupon-section {
-  margin-bottom: var(--space-4);
-}
-
-.coupon-input-group {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.coupon-input {
-  flex: 1;
-  padding: var(--space-3);
-  background: rgba(15, 23, 42, 0.6);
-  border: 2px solid rgba(167, 139, 250, 0.2);
-  border-radius: var(--radius-md);
-  color: #f1f5f9;
-  font-size: var(--text-base);
-  transition: all var(--transition-fast);
-}
-
-.coupon-input:focus {
-  outline: none;
-  border-color: #a78bfa;
-  background: rgba(15, 23, 42, 0.8);
-}
-
-.coupon-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.coupon-input::placeholder {
-  color: #64748b;
-}
-
-.btn-apply-coupon {
-  min-width: 100px;
-  padding: var(--space-3) var(--space-4);
-  font-weight: var(--font-semibold);
-}
-
-.coupon-error {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: var(--radius-md);
-  color: #fca5a5;
-  font-size: var(--text-sm);
-}
-
-.coupon-error svg {
-  flex-shrink: 0;
-}
-
-.coupon-success {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-  padding: var(--space-3);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: var(--radius-md);
-  color: #6ee7b7;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-}
-
-.coupon-success svg {
-  flex-shrink: 0;
-}
-
-.btn-remove-coupon {
-  margin-left: auto;
-  padding: var(--space-1) var(--space-2);
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: var(--radius-sm);
-  color: #fca5a5;
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-remove-coupon:hover {
-  background: rgba(239, 68, 68, 0.3);
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-3);
-  font-size: var(--text-base);
-  color: #cbd5e1;
-}
-
-.summary-row.discount-row {
-  color: #6ee7b7;
-}
-
-.discount-amount {
-  color: #6ee7b7;
-  font-weight: var(--font-semibold);
-}
-
-.free-shipping {
-  color: #6ee7b7;
-  font-weight: var(--font-semibold);
-}
-
-.summary-divider {
-  height: 1px;
-  background: rgba(167, 139, 250, 0.2);
-  margin: var(--space-4) 0;
-}
-
-.total-row {
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-}
-
-.total-row span:first-child {
-  color: #f1f5f9;
-}
-
-.total-price {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  background: linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.btn-checkout {
-  width: 100%;
-  margin-top: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  font-size: var(--text-lg);
-  font-weight: var(--font-bold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-}
-
-.btn-continue {
-  width: 100%;
-  margin-top: var(--space-3);
-  padding: var(--space-3) var(--space-5);
-  text-align: center;
-  text-decoration: none;
-  display: block;
-}
-
-/* Free Shipping Indicator */
-.free-shipping-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-5);
-  padding: var(--space-3);
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: var(--radius-md);
-  color: #6ee7b7;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-}
-
-.free-shipping-indicator svg {
-  flex-shrink: 0;
-}
-
-/* Shipping Progress */
-.shipping-progress {
-  margin-top: var(--space-5);
-  padding: var(--space-3);
-  background: rgba(30, 41, 59, 0.4);
-  border-radius: var(--radius-md);
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(15, 23, 42, 0.6);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-bottom: var(--space-2);
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #a78bfa 0%, #8b5cf6 100%);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-normal);
-}
-
-.shipping-progress p {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: #94a3b8;
-  text-align: center;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .cart-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .cart-item {
-    grid-template-columns: 100px 1fr;
-    gap: var(--space-3);
-  }
-
-  .item-image {
-    width: 100px;
-    height: 100px;
-  }
-
-  .item-actions {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .cart-summary {
-    position: static;
-  }
-}
-
-/* Dark Theme Enhancements */
-.cart-page {
-  background: transparent;
-}
-
-.page-title {
-  color: #f1f5f9;
-}
-
-.empty-cart {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(167, 139, 250, 0.15);
-}
-
-.empty-cart h2 {
-  color: #f1f5f9;
-}
-
-.empty-cart p {
-  color: #94a3b8;
-}
-
-.cart-item {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(167, 139, 250, 0.15);
-  backdrop-filter: blur(10px);
-  transition: all var(--transition-fast);
-}
-
-.cart-item:hover {
-  border-color: rgba(167, 139, 250, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-}
-
-.item-name {
-  color: #f1f5f9;
-}
-
-.item-brand {
-  color: #94a3b8;
-}
-
-.item-price {
-  color: #c4b5fd;
-}
-
-.item-total {
-  color: #f1f5f9;
-}
-
-.variant-tag {
-  background: rgba(167, 139, 250, 0.15);
-  color: #e2e8f0;
-  border: 1px solid rgba(167, 139, 250, 0.2);
-}
-
-.loading-container p {
-  color: #94a3b8;
-}
-</style>

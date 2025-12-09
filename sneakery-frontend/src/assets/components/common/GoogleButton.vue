@@ -1,10 +1,11 @@
 <template>
   <button 
-    :class="['google-button', { 'loading': loading }]"
+    :class="['google-button', { 'loading': loading, 'disabled': loading }]"
     :disabled="loading"
     @click="handleClick"
+    type="button"
   >
-    <div class="google-icon">
+    <div class="google-icon-wrapper">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.255H17.92C17.665 15.63 16.89 16.795 15.725 17.575V20.335H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
         <path d="M12 23C15.24 23 17.955 21.935 19.28 20.335L15.725 17.575C14.735 18.235 13.48 18.625 12 18.625C8.87 18.625 6.22 16.585 5.405 13.71H1.77V16.57C3.045 19.13 7.26 23 12 23Z" fill="#34A853"/>
@@ -13,7 +14,12 @@
       </svg>
     </div>
     <span class="button-text">{{ text }}</span>
-    <div class="ripple-effect" v-if="ripple"></div>
+    <div v-if="loading" class="loading-spinner">
+      <svg class="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-opacity="0.25"/>
+        <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+      </svg>
+    </div>
   </button>
 </template>
 
@@ -33,145 +39,67 @@ const props = defineProps({
 
 const emit = defineEmits(['click'])
 
-const ripple = ref(false)
-
 const handleClick = (event) => {
   if (props.loading) return
-  
-  // Create ripple effect
-  ripple.value = true
-  setTimeout(() => {
-    ripple.value = false
-  }, 600)
-  
   emit('click', event)
 }
 </script>
 
 <style scoped>
 .google-button {
-  position: relative;
-  width: 100%;
-  height: 50px;
-  background: #ffffff;
-  border: 1px solid #dadce0;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #3c4043;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  @apply relative w-full flex items-center justify-center gap-3 px-4 py-3 
+         bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 
+         rounded-xl text-gray-700 dark:text-gray-300 
+         font-medium text-sm
+         transition-all duration-300 
+         hover:bg-gray-50 dark:hover:bg-gray-600 
+         hover:border-gray-400 dark:hover:border-gray-500
+         hover:shadow-lg hover:-translate-y-0.5
+         active:translate-y-0 active:shadow-md
+         focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+         overflow-hidden;
 }
 
-.google-button:hover {
-  background: #f8f9fa;
-  border-color: #dadce0;
-  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
-  transform: translateY(-1px);
-}
-
-.google-button:active {
-  background: #f1f3f4;
-  transform: translateY(0);
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-}
-
-.google-button:focus {
-  outline: none;
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15), 0 0 0 3px rgba(66, 133, 244, 0.12);
-}
-
-.google-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.google-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.google-button:hover .google-icon {
-  transform: scale(1.1);
+.google-icon-wrapper {
+  @apply flex items-center justify-center flex-shrink-0;
 }
 
 .button-text {
-  font-family: 'Google Sans', 'Roboto', sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.25px;
-  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  @apply flex-1 text-center font-medium;
 }
 
-.google-button:hover .button-text {
-  color: #1a73e8;
+.loading-spinner {
+  @apply flex items-center justify-center flex-shrink-0;
 }
 
-.ripple-effect {
+.google-button.loading .button-text {
+  @apply opacity-75;
+}
+
+.google-button:active {
+  @apply transform scale-[0.98];
+}
+
+/* Ripple effect on click */
+.google-button::before {
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(66, 133, 244, 0.3);
   border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
   transform: translate(-50%, -50%);
-  animation: ripple 0.6s ease-out;
-  pointer-events: none;
+  transition: width 0.6s, height 0.6s;
 }
 
-@keyframes ripple {
-  0% {
-    width: 0;
-    height: 0;
-    opacity: 1;
-  }
-  100% {
-    width: 200px;
-    height: 200px;
-    opacity: 0;
-  }
-}
-
-/* Loading state */
-.google-button.loading {
-  pointer-events: none;
-}
-
-.google-button.loading .google-icon {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-  .google-button {
-    height: 48px;
-    font-size: 13px;
-    gap: 10px;
-  }
-  
-  .google-icon {
-    width: 18px;
-    height: 18px;
-  }
+.google-button:active::before {
+  width: 300px;
+  height: 300px;
 }
 </style>
+
+
+

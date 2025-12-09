@@ -10,11 +10,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Loyalty Points Service
@@ -37,24 +39,12 @@ public class LoyaltyService {
      */
     @Transactional(readOnly = true)
     public int getUserPointsBalance(Long userId) {
-        log.info("Fetching points balance for user ID: {}", userId);
-        
-        LocalDateTime now = LocalDateTime.now();
-        List<LoyaltyPoint> points = loyaltyPointRepository.findByUserIdAndExpiresAtAfter(userId, now);
-        
-        int balance = points.stream()
-                .mapToInt(lp -> {
-                    if ("earn".equals(lp.getTransactionType())) {
-                        return lp.getPoints();
-                    } else if ("redeem".equals(lp.getTransactionType())) {
-                        return -lp.getPoints();
-                    }
-                    return 0;
-                })
-                .sum();
-        
-        log.info("User {} has {} points", userId, balance);
-        return Math.max(balance, 0); // Không cho âm
+        log.info("Fetching balance for user {}", userId);
+
+        Integer balance = loyaltyPointRepository.calculateCurrentPoints(userId, LocalDateTime.now());
+        int safeBalance = balance != null ? balance : 0;
+
+        return Math.max(safeBalance, 0); // Không cho âm
     }
 
     /**
@@ -71,31 +61,41 @@ public class LoyaltyService {
      */
     @Transactional
     public void earnPointsFromOrder(Order order) {
-        log.info("💎 Earning points for order ID: {}", order.getId());
-        
-        // Tính points: 1 point = 1,000 VND
-        int points = calculatePointsFromAmount(order.getTotalAmount());
-        
+        log.info("🎯 Earn points for order {}", order.getId());
+
+        BigDecimal subtotal = order.getSubtotal() != null ? order.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal discountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO;
+
+        BigDecimal pointsDiscount = BigDecimal.ZERO;
+        if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
+            pointsDiscount = BigDecimal.valueOf(order.getPointsUsed() * (long) VND_PER_POINT);
+        }
+
+        BigDecimal taxable = subtotal.subtract(discountAmount).subtract(pointsDiscount);
+        if (taxable.compareTo(BigDecimal.ZERO) < 0) taxable = BigDecimal.ZERO;
+
+        int points = taxable
+                .divide(BigDecimal.valueOf(10000), 0, java.math.RoundingMode.HALF_UP)
+                .intValue();
+
         if (points <= 0) {
-            log.info("Order amount too low to earn points");
+            log.info("⛔ Taxable too low → no points");
             return;
         }
-        
-        LoyaltyPoint loyaltyPoint = new LoyaltyPoint();
-        loyaltyPoint.setUser(order.getUser());
-        loyaltyPoint.setPoints(points);
-        loyaltyPoint.setTransactionType("earn");
-        loyaltyPoint.setEarnedFromOrderId(order.getId());
-        loyaltyPoint.setDescription(String.format("Tích điểm từ đơn hàng %s", order.getOrderNumber()));
-        loyaltyPoint.setExpiresAt(LocalDateTime.now().plusYears(1)); // Hết hạn sau 1 năm
-        
-        loyaltyPointRepository.save(loyaltyPoint);
-        
-        // Update order
+
+        LoyaltyPoint lp = new LoyaltyPoint();
+        lp.setUser(order.getUser());
+        lp.setPoints(points);
+        lp.setTransactionType("earn");
+        lp.setEarnedFromOrder(order);
+        lp.setDescription("Tích điểm từ đơn hàng " + order.getOrderNumber());
+        lp.setExpiresAt(LocalDateTime.now().plusYears(1));
+
+        loyaltyPointRepository.save(lp);
         order.setPointsEarned(points);
-        
-        log.info("✅ User {} earned {} points from order {}", 
-            order.getUser().getId(), points, order.getId());
+
+        log.info("🏆 User {} earned {} points on taxable {}",
+                order.getUser().getId(), points, taxable);
     }
 
     /**
@@ -104,47 +104,47 @@ public class LoyaltyService {
     @Transactional
     public BigDecimal redeemPoints(Long userId, int pointsToUse, Order order) {
         log.info("🎁 Redeeming {} points for user {}", pointsToUse, userId);
-        
+
         // Validate user
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User không tồn tại"));
-        
+
         // Check balance
         int currentBalance = getUserPointsBalance(userId);
-        
         if (pointsToUse > currentBalance) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, 
-                String.format("Không đủ điểm. Số dư: %d, yêu cầu: %d", currentBalance, pointsToUse));
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    String.format("Không đủ điểm. Số dư: %d, yêu cầu: %d", currentBalance, pointsToUse));
         }
-        
+
         if (pointsToUse <= 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Số điểm phải lớn hơn 0");
         }
-        
-        // Tính discount amount
+
+        // Convert to discount
         BigDecimal discountAmount = BigDecimal.valueOf(pointsToUse * VND_PER_POINT);
-        
-        // Validate không vượt quá total amount
-        if (discountAmount.compareTo(order.getTotalAmount()) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Số điểm sử dụng vượt quá giá trị đơn hàng");
-        }
-        
-        // Tạo redemption record
+
+        // Tạo record REDEEM chuẩn DB CHECK
         LoyaltyPoint redemption = new LoyaltyPoint();
         redemption.setUser(user);
-        redemption.setPoints(pointsToUse);
+
+        // ⭐ DB CHECK: redeem phải là điểm âm
+        redemption.setPoints(-pointsToUse);
+
         redemption.setTransactionType("redeem");
-        redemption.setRedeemedInOrderId(order.getId());
-        redemption.setDescription(String.format("Đổi điểm cho đơn hàng %s", order.getOrderNumber()));
-        
+        redemption.setRedeemedInOrder(order);
+        redemption.setDescription("Đổi điểm cho đơn hàng " + order.getOrderNumber());
+
+        // ⭐ DB CHECK: redeem phải expiresAt = NULL
+        redemption.setExpiresAt(null);
+
         loyaltyPointRepository.save(redemption);
-        
+
         // Update order
         order.setPointsUsed(pointsToUse);
-        
-        log.info("✅ User {} redeemed {} points = {} VND discount", 
-            userId, pointsToUse, discountAmount);
-        
+
+        log.info("✅ User {} redeemed {} points = {} VND discount",
+                userId, pointsToUse, discountAmount);
+
         return discountAmount;
     }
 
@@ -155,7 +155,7 @@ public class LoyaltyService {
     public void awardBonusPoints(Long userId, int points, String reason) {
         log.info("🎉 Awarding {} bonus points to user {}", points, userId);
         
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(Objects.requireNonNull(userId))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User không tồn tại"));
         
         LoyaltyPoint bonus = new LoyaltyPoint();
@@ -170,6 +170,11 @@ public class LoyaltyService {
         log.info("✅ Awarded {} bonus points to user {}", points, userId);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void redeemPointsInNewTx(Long userId, int pointsToUse, Order order) {
+        redeemPoints(userId, pointsToUse, order);
+    }
+
     /**
      * Calculate points from order amount
      */
@@ -177,9 +182,11 @@ public class LoyaltyService {
         if (amount == null) {
             return 0;
         }
-        
-        // 1 point = 1,000 VND
-        return amount.divide(BigDecimal.valueOf(VND_PER_POINT), 0, java.math.RoundingMode.DOWN).intValue();
+
+        // ⭐ Công thức mới: tổng tiền / 10,000 và làm tròn
+        return amount
+                .divide(BigDecimal.valueOf(10000), 0, java.math.RoundingMode.HALF_UP)
+                .intValue();
     }
 
     /**

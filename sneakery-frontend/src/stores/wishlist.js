@@ -5,13 +5,15 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import wishlistService from '@/services/wishlistService'
+import userService from '@/services/userService'
+import logger from '@/utils/logger'
 
 export const useWishlistStore = defineStore('wishlist', () => {
   // State
   const wishlistItems = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const loaded = ref(false)
   
   // Computed
   const wishlistCount = computed(() => wishlistItems.value.length)
@@ -30,16 +32,18 @@ export const useWishlistStore = defineStore('wishlist', () => {
    * Fetch wishlist từ server
    */
   const fetchWishlist = async () => {
+    if (loaded.value) return wishlistItems.value; 
     loading.value = true
     error.value = null
     
     try {
-      const data = await wishlistService.getWishlist()
+      const data = await userService.getWishlist()
       wishlistItems.value = data
+      loaded.value = true 
       return data
     } catch (err) {
       error.value = err.response?.data?.message || 'Không thể tải wishlist'
-      console.error('Error fetching wishlist:', err)
+      logger.error('Error fetching wishlist:', err)
       throw err
     } finally {
       loading.value = false
@@ -54,12 +58,12 @@ export const useWishlistStore = defineStore('wishlist', () => {
     error.value = null
     
     try {
-      const data = await wishlistService.addToWishlist(productId)
+      const data = await userService.addToWishlist(productId)
       wishlistItems.value.unshift(data) // Thêm vào đầu mảng
       return data
     } catch (err) {
       error.value = err.response?.data?.message || 'Không thể thêm vào wishlist'
-      console.error('Error adding to wishlist:', err)
+      logger.error('Error adding to wishlist:', err)
       throw err
     } finally {
       loading.value = false
@@ -74,7 +78,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     error.value = null
     
     try {
-      await wishlistService.removeFromWishlist(productId)
+      await userService.removeFromWishlist(productId)
       
       // Xóa khỏi state local
       wishlistItems.value = wishlistItems.value.filter(
@@ -82,7 +86,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
       )
     } catch (err) {
       error.value = err.response?.data?.message || 'Không thể xóa khỏi wishlist'
-      console.error('Error removing from wishlist:', err)
+      logger.error('Error removing from wishlist:', err)
       throw err
     } finally {
       loading.value = false
@@ -119,11 +123,11 @@ export const useWishlistStore = defineStore('wishlist', () => {
     error.value = null
     
     try {
-      await wishlistService.clearWishlist()
+      await userService.clearWishlist()
       wishlistItems.value = []
     } catch (err) {
       error.value = err.response?.data?.message || 'Không thể xóa wishlist'
-      console.error('Error clearing wishlist:', err)
+      logger.error('Error clearing wishlist:', err)
       throw err
     } finally {
       loading.value = false
@@ -144,6 +148,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     wishlistItems.value = []
     loading.value = false
     error.value = null
+    loaded.value = false 
   }
 
   return {
