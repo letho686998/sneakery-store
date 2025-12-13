@@ -25,14 +25,14 @@ import static com.cloudinary.utils.StringUtils.isBlank;
 
 /**
  * Service xử lý đơn hàng cho User
- * 
+ *
  * <p>Service này cung cấp các chức năng quản lý đơn hàng cho user:
  * <ul>
  *   <li>Tạo đơn hàng từ giỏ hàng (checkout)</li>
  *   <li>Lấy danh sách đơn hàng của user</li>
  *   <li>Lấy thông tin chi tiết đơn hàng theo ID</li>
  * </ul>
- * 
+ *
  * <p><b>Về checkout:</b>
  * <ul>
  *   <li>Checkout sẽ tạo đơn hàng từ giỏ hàng hiện tại</li>
@@ -40,13 +40,13 @@ import static com.cloudinary.utils.StringUtils.isBlank;
  *   <li>Hệ thống sẽ tự động áp dụng coupon (nếu có) và tính điểm loyalty</li>
  *   <li>Gửi email xác nhận đơn hàng cho khách hàng</li>
  * </ul>
- * 
+ *
  * <p><b>Về thanh toán:</b>
  * <ul>
  *   <li>Hỗ trợ nhiều phương thức thanh toán: COD, Bank Transfer, Credit Card</li>
  *   <li>Nếu thanh toán online, sẽ tích hợp với Payment Gateway</li>
  * </ul>
- * 
+ *
  * <p><b>Ví dụ sử dụng:</b>
  * <pre>
  * // Tạo đơn hàng từ giỏ hàng
@@ -54,11 +54,11 @@ import static com.cloudinary.utils.StringUtils.isBlank;
  * checkoutRequest.setAddressId(1L);
  * checkoutRequest.setPaymentMethod("COD");
  * OrderDto order = orderService.createOrderFromCart(userId, checkoutRequest);
- * 
+ *
  * // Lấy danh sách đơn hàng
  * List&lt;OrderSummaryDto&gt; orders = orderService.getMyOrders(userId);
  * </pre>
- * 
+ *
  * @author Sneakery Store Team
  * @since 1.0
  */
@@ -84,7 +84,7 @@ public class OrderService {
 
     /**
      * Xử lý Checkout - Tạo đơn hàng từ giỏ hàng
-     * 
+     *
      * <p>Phương thức này sẽ:
      * <ol>
      *   <li>Lấy giỏ hàng của user (với đầy đủ thông tin items)</li>
@@ -97,7 +97,7 @@ public class OrderService {
      *   <li>Áp dụng coupon và tính điểm loyalty (nếu có)</li>
      *   <li>Gửi email xác nhận đơn hàng</li>
      * </ol>
-     * 
+     *
      * <p><b>Lưu ý:</b>
      * <ul>
      *   <li>Giỏ hàng phải có ít nhất 1 sản phẩm</li>
@@ -107,7 +107,7 @@ public class OrderService {
      *   <li>Nếu có coupon, sẽ tự động áp dụng và tính lại tổng tiền</li>
      *   <li>Nếu thanh toán online, sẽ tích hợp với Payment Gateway</li>
      * </ul>
-     * 
+     *
      * @param userId ID của user đang checkout
      * @param requestDto DTO chứa thông tin checkout:
      *                   - addressId: ID địa chỉ giao hàng (bắt buộc)
@@ -116,14 +116,14 @@ public class OrderService {
      *                   - note: Ghi chú đơn hàng (tùy chọn)
      * @return OrderDto của đơn hàng vừa tạo
      * @throws ApiException nếu giỏ hàng trống, địa chỉ không tồn tại, hết tồn kho, hoặc validation thất bại
-     * 
+     *
      * @example
      * <pre>
      * CheckoutRequestDto checkoutRequest = new CheckoutRequestDto();
      * checkoutRequest.setAddressId(1L);
      * checkoutRequest.setPaymentMethod("COD");
      * checkoutRequest.setCouponCode("SALE10"); // Tùy chọn
-     * 
+     *
      * OrderDto order = orderService.createOrderFromCart(userId, checkoutRequest);
      * System.out.println(order.getOrderCode()); // Mã đơn hàng
      * System.out.println(order.getTotalAmount()); // Tổng tiền
@@ -131,11 +131,11 @@ public class OrderService {
      */
     @Transactional
     public OrderDto createOrderFromCart(Long userId, CheckoutRequestDto requestDto) {
-        
+
         // 1. Lấy giỏ hàng (đã tối ưu)
         Cart cart = cartRepository.findByUserIdWithDetails(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy giỏ hàng"));
-        
+
         if (cart.getItems() == null || cart.getItems().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Giỏ hàng trống!");
         }
@@ -147,7 +147,7 @@ public class OrderService {
         // 3. Lấy địa chỉ giao hàng (và kiểm tra)
         Address shippingAddress = addressRepository.findByIdAndUserId(requestDto.getAddressShippingId(), userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Địa chỉ giao hàng không hợp lệ"));
-        
+
         // 4. Lấy địa chỉ thanh toán
         Address billingAddress = requestDto.getAddressBillingId() != null ?
                 addressRepository.findByIdAndUserId(requestDto.getAddressBillingId(), userId)
@@ -156,7 +156,7 @@ public class OrderService {
 
         // 5. Generate order number
         String orderNumber = generateOrderNumber();
-        
+
         // 6. Tạo đơn hàng (Order)
         Order order = new Order();
         order.setUser(user);
@@ -170,14 +170,25 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CartItem cartItem : cart.getItems()) {
             ProductVariant variant = cartItem.getVariant();
-            
+
             // 7.1. Kiểm tra tồn kho (quan trọng)
             // Đối với online/offline orders: chỉ kiểm tra, KHÔNG trừ kho ngay
             // Kho sẽ được trừ khi order status = "Completed"
-            if (variant.getStockQuantity() < cartItem.getQuantity()) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Sản phẩm " + variant.getProduct().getName() + " không đủ hàng");
+//            if (variant.getStockQuantity() < cartItem.getQuantity()) {
+//                throw new ApiException(HttpStatus.BAD_REQUEST, "Sản phẩm " + variant.getProduct().getName() + " không đủ hàng");
+//            }
+            int availableStock = variant.getStockQuantity() - variant.getReservedQuantity();
+            if (availableStock < cartItem.getQuantity()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Sản phẩm " +
+                        variant.getProduct().getName() + " không đủ hàng còn lại");
             }
-            
+
+            // 🔒 HOLD stock ngay khi Pending
+            variant.setReservedQuantity(
+                    variant.getReservedQuantity() + cartItem.getQuantity()
+            );
+            variantRepository.save(variant);
+
             // 7.2. KHÔNG trừ kho ở đây cho online/offline orders
             // Kho sẽ được trừ khi order status được cập nhật thành "Completed" trong AdminOrderService.updateOrderStatus
             // Note: POS orders sẽ trừ kho ngay khi tạo (xem AdminOrderService.createPOSOrder)
@@ -189,25 +200,25 @@ public class OrderService {
             detail.setQuantity(cartItem.getQuantity());
             BigDecimal effectivePrice = getEffectivePrice(variant);
             detail.setUnitPrice(effectivePrice);
-            
+
             // Set các trường denormalized (lưu lại thông tin tại thời điểm mua hàng)
             detail.setProductName(variant.getProduct().getName());
             detail.setVariantSku(variant.getSku() != null ? variant.getSku() : "");
             detail.setSize(variant.getSize() != null ? variant.getSize() : "");
             detail.setColor(variant.getColor() != null ? variant.getColor() : "");
-            
+
             // Tính total_price
             BigDecimal totalPrice = effectivePrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             detail.setTotalPrice(totalPrice);
-            
+
             order.getOrderDetails().add(detail);
             totalAmount = totalAmount.add(totalPrice);
         }
-        
+
         // Set subtotal
         BigDecimal subtotal = totalAmount;
         order.setSubtotal(subtotal);
-        
+
         // 8. Xử lý coupon nếu có
         BigDecimal discountAmount = BigDecimal.ZERO;
         Coupon coupon = null;
@@ -215,7 +226,7 @@ public class OrderService {
             try {
                 CouponDto couponDto = couponService.validateCouponCode(requestDto.getCouponCode());
                 coupon = couponRepository.findById(Objects.requireNonNull(couponDto.getId())).orElse(null);
-                
+
                 if (coupon != null) {
                     // Tính discount amount
                     if ("percent".equalsIgnoreCase(coupon.getDiscountType())) {
@@ -231,21 +242,21 @@ public class OrderService {
                             discountAmount = subtotal;
                         }
                     }
-                    
+
                     // Kiểm tra minOrderAmount
                     if (coupon.getMinOrderAmount() != null && subtotal.compareTo(coupon.getMinOrderAmount()) < 0) {
-                        throw new ApiException(HttpStatus.BAD_REQUEST, 
-                                String.format("Đơn hàng tối thiểu %s để áp dụng mã giảm giá", 
+                        throw new ApiException(HttpStatus.BAD_REQUEST,
+                                String.format("Đơn hàng tối thiểu %s để áp dụng mã giảm giá",
                                         formatCurrency(coupon.getMinOrderAmount())));
                     }
-                    
+
                     // Cập nhật usesCount
                     if (coupon.getUsesCount() == null) {
                         coupon.setUsesCount(0);
                     }
                     coupon.setUsesCount(coupon.getUsesCount() + 1);
                     couponRepository.save(coupon);
-                    
+
                     order.setCoupon(coupon);
                 }
             } catch (ApiException e) {
@@ -255,9 +266,9 @@ public class OrderService {
                 // Nếu có lỗi với coupon, tiếp tục mà không áp dụng coupon
             }
         }
-        
+
         order.setDiscountAmount(discountAmount);
-        
+
         // 9. Tính shipping fee dựa trên địa chỉ giao hàng
         BigDecimal shippingFee = calculateShippingFee(shippingAddress);
         order.setShippingFee(shippingFee);
@@ -298,9 +309,8 @@ public class OrderService {
         BigDecimal amountAfterDiscounts = amountAfterCoupon.subtract(pointsDiscount);
 
 // 12. VAT 10%
-        BigDecimal taxAmount = amountAfterDiscounts
-                .multiply(BigDecimal.valueOf(0.10))
-                .setScale(2, RoundingMode.HALF_UP);
+        // 12. VAT (TẠM THỜI = 0, giữ field để mở rộng sau)
+        BigDecimal taxAmount = BigDecimal.ZERO;
         order.setTaxAmount(taxAmount);
 
 // 13. Shipping fee
@@ -352,21 +362,21 @@ public class OrderService {
 //
         // Note: Inventory logs được tạo tự động bởi database trigger khi stock_quantity thay đổi
         // Trigger sẽ tự động log mọi thay đổi inventory
-        
+
         cartRepository.delete(cart);
 
         String paymentUrl = null;
         if ("online".equalsIgnoreCase(requestDto.getPaymentMethod())) {
             paymentUrl = paymentGatewayService.createVNPayPaymentUrl(savedOrder.getId(), finalTotal, "Thanh toan don hang " + savedOrder.getOrderNumber());
         }
-        
+
         try {
             emailService.sendOrderConfirmation(savedOrder);
         } catch (Exception e) {
-            log.error("Failed to send order confirmation email for order {}: {}", 
+            log.error("Failed to send order confirmation email for order {}: {}",
                     savedOrder.getOrderNumber(), e.getMessage(), e);
         }
-        
+
         return convertToOrderDto(savedOrder, paymentUrl);
     }
 
@@ -375,11 +385,11 @@ public class OrderService {
      */
     @Transactional
     public OrderDto createGuestOrderFromCart(String sessionId, GuestCheckoutRequestDto requestDto) {
-        
+
         // 1. Lấy guest cart
         Cart cart = cartRepository.findBySessionIdWithDetails(sessionId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy giỏ hàng"));
-        
+
         if (cart.getItems() == null || cart.getItems().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Giỏ hàng trống!");
         }
@@ -406,7 +416,7 @@ public class OrderService {
 
         // 5. Generate order number
         String orderNumber = generateOrderNumber();
-        
+
         // 6. Tạo đơn hàng (Order)
         Order order = new Order();
         order.setUser(guestUser);
@@ -420,15 +430,27 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (CartItem cartItem : cart.getItems()) {
             ProductVariant variant = cartItem.getVariant();
-            
+
             // 7.1. Kiểm tra tồn kho (quan trọng)
             // Đối với guest/online/offline orders: chỉ kiểm tra, KHÔNG trừ kho ngay
             // Kho sẽ được trừ khi order status = "Completed"
             if (variant.getStockQuantity() < cartItem.getQuantity()) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, 
-                    "Sản phẩm " + variant.getProduct().getName() + " không đủ hàng");
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Sản phẩm " + variant.getProduct().getName() + " không đủ hàng");
             }
-            
+
+            // 🔒 Hold stock for guest order
+            int availableStock = variant.getStockQuantity() - variant.getReservedQuantity();
+            if (availableStock < cartItem.getQuantity()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST,
+                        "Sản phẩm " + variant.getProduct().getName() + " không đủ hàng còn lại");
+            }
+
+            variant.setReservedQuantity(
+                    variant.getReservedQuantity() + cartItem.getQuantity()
+            );
+            variantRepository.save(variant);
+
             // 7.2. KHÔNG trừ kho ở đây cho guest/online/offline orders
             // Kho sẽ được trừ khi order status được cập nhật thành "Completed" trong AdminOrderService.updateOrderStatus
             // Note: POS orders sẽ trừ kho ngay khi tạo (xem AdminOrderService.createPOSOrder)
@@ -440,21 +462,21 @@ public class OrderService {
             detail.setQuantity(cartItem.getQuantity());
             BigDecimal effectivePrice = getEffectivePrice(variant);
             detail.setUnitPrice(effectivePrice);
-            
+
             // Set các trường denormalized (lưu lại thông tin tại thời điểm mua hàng)
             detail.setProductName(variant.getProduct().getName());
             detail.setVariantSku(variant.getSku() != null ? variant.getSku() : "");
             detail.setSize(variant.getSize() != null ? variant.getSize() : "");
             detail.setColor(variant.getColor() != null ? variant.getColor() : "");
-            
+
             // Tính total_price
             BigDecimal totalPrice = effectivePrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             detail.setTotalPrice(totalPrice);
-            
+
             order.getOrderDetails().add(detail);
             totalAmount = totalAmount.add(totalPrice);
         }
-        
+
         // Set subtotal
         BigDecimal subtotal = totalAmount;
         order.setSubtotal(subtotal);
@@ -517,8 +539,8 @@ public class OrderService {
         BigDecimal amountAfterDiscounts = amountAfterCoupon;
 
 // 12. TAX 10%
-        BigDecimal taxAmount = amountAfterDiscounts.multiply(BigDecimal.valueOf(0.10))
-                .setScale(2, RoundingMode.HALF_UP);
+        // 12. VAT (TẠM THỜI = 0)
+        BigDecimal taxAmount = BigDecimal.ZERO;
         order.setTaxAmount(taxAmount);
 
 // 13. Shipping fee
@@ -545,27 +567,27 @@ public class OrderService {
         order.getStatusHistories().add(history);
 
         Order savedOrder = orderRepository.save(order);
-        
+
         // 15. Xóa guest cart
         cartRepository.delete(cart);
 
         String paymentUrl = null;
         if ("online".equalsIgnoreCase(requestDto.getPaymentMethod())) {
-            paymentUrl = paymentGatewayService.createVNPayPaymentUrl(savedOrder.getId(), finalTotal, 
+            paymentUrl = paymentGatewayService.createVNPayPaymentUrl(savedOrder.getId(), finalTotal,
                     "Thanh toan don hang " + savedOrder.getOrderNumber());
         }
-        
+
         // 16. Gửi email xác nhận (nếu có email)
         if (requestDto.getEmail() != null && !requestDto.getEmail().trim().isEmpty()) {
             try {
                 // Gửi email cho guest (có thể cần custom email service method)
                 emailService.sendOrderConfirmation(savedOrder);
             } catch (Exception e) {
-                log.error("Failed to send order confirmation email for guest order {}: {}", 
+                log.error("Failed to send order confirmation email for guest order {}: {}",
                         savedOrder.getOrderNumber(), e.getMessage(), e);
             }
         }
-        
+
         return convertToOrderDto(savedOrder, paymentUrl);
     }
 
@@ -591,7 +613,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderSummaryDto> getMyOrders(Long userId) {
         List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        
+
         return orders.stream().distinct()
                 .map(this::convertToOrderSummaryDto)
                 .collect(Collectors.toList());
@@ -611,16 +633,16 @@ public class OrderService {
             // Generate payment URL với orderNumber (nếu có) hoặc orderId
             if (order.getOrderNumber() != null) {
                 paymentUrl = paymentGatewayService.createVNPayPaymentUrl(
-                    order.getId(), 
-                    payment.getAmount(), 
-                    "Thanh toan don hang " + order.getOrderNumber()
+                        order.getId(),
+                        payment.getAmount(),
+                        "Thanh toan don hang " + order.getOrderNumber()
                 );
             } else {
                 // Fallback nếu không có orderNumber
                 paymentUrl = paymentGatewayService.createVNPayPaymentUrl(
-                    order.getId(), 
-                    payment.getAmount(), 
-                    "Thanh toan don hang " + order.getId()
+                        order.getId(),
+                        payment.getAmount(),
+                        "Thanh toan don hang " + order.getId()
                 );
             }
         }
@@ -630,7 +652,7 @@ public class OrderService {
 
     /**
      * Hủy đơn hàng (chỉ cho phép khi đơn hàng đang ở trạng thái "pending")
-     * 
+     *
      * <p>Phương thức này sẽ:
      * <ol>
      *   <li>Kiểm tra đơn hàng có thuộc về user hiện tại không</li>
@@ -640,14 +662,14 @@ public class OrderService {
      *   <li>Hoàn trả tồn kho cho các sản phẩm trong đơn hàng</li>
      *   <li>Trả về OrderDto sau khi hủy</li>
      * </ol>
-     * 
+     *
      * <p><b>Lưu ý:</b>
      * <ul>
      *   <li>Chỉ cho phép hủy khi đơn hàng đang ở trạng thái "pending" (chờ xác nhận)</li>
      *   <li>Nếu đơn hàng đã được xác nhận hoặc đang xử lý, không cho phép hủy</li>
      *   <li>Sẽ hoàn trả tồn kho cho các sản phẩm trong đơn hàng</li>
      * </ul>
-     * 
+     *
      * @param orderId ID của đơn hàng cần hủy
      * @param userId ID của user hiện tại
      * @return OrderDto của đơn hàng sau khi hủy
@@ -662,25 +684,19 @@ public class OrderService {
         // Kiểm tra trạng thái đơn hàng - chỉ cho phép hủy khi status là "pending"
         String currentStatus = order.getStatus() != null ? order.getStatus().toLowerCase() : "";
         if (!"pending".equals(currentStatus)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, 
-                "Chỉ có thể hủy đơn hàng khi đơn hàng đang ở trạng thái 'Chờ xác nhận'. Trạng thái hiện tại: " + order.getStatus());
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể hủy đơn hàng khi đơn hàng đang ở trạng thái 'Chờ xác nhận'. Trạng thái hiện tại: " + order.getStatus());
         }
 
         log.info("🔄 Cancelling order #{} for user {}", orderId, userId);
 
-        // Hoàn trả tồn kho cho các sản phẩm trong đơn hàng
-        if (order.getOrderDetails() != null) {
-            for (OrderDetail detail : order.getOrderDetails()) {
-                ProductVariant variant = detail.getVariant();
-                if (variant != null) {
-                    int currentStock = variant.getStockQuantity();
-                    int quantityToRestore = detail.getQuantity();
-                    variant.setStockQuantity(currentStock + quantityToRestore);
-                    variantRepository.save(variant);
-                    log.info("✅ Restored stock for variant #{}: {} -> {}", 
-                        variant.getId(), currentStock, currentStock + quantityToRestore);
-                }
-            }
+        // 🔓 Release reserved stock
+        for (OrderDetail detail : order.getOrderDetails()) {
+            ProductVariant variant = detail.getVariant();
+            variant.setReservedQuantity(
+                    variant.getReservedQuantity() - detail.getQuantity()
+            );
+            variantRepository.save(variant);
         }
 
         // Cập nhật trạng thái đơn hàng thành "cancelled"
@@ -768,6 +784,12 @@ public class OrderService {
                     }
 
                     variant.setStockQuantity(currentStock - quantityToReduce);
+                    variant.setReservedQuantity(
+                            variant.getReservedQuantity() - quantityToReduce
+                    );
+                    if (variant.getReservedQuantity() < 0) {
+                        variant.setReservedQuantity(0); // Safety guard
+                    }
                     variantRepository.save(variant);
 
                     log.info("📦 Reduced stock for variant #{}: {} -> {}",
@@ -803,7 +825,7 @@ public class OrderService {
 
     /**
      * Tạo yêu cầu đổi trả cho đơn hàng
-     * 
+     *
      * <p>Phương thức này sẽ:
      * <ol>
      *   <li>Kiểm tra đơn hàng có thuộc về user không</li>
@@ -811,14 +833,14 @@ public class OrderService {
      *   <li>Kiểm tra đơn hàng đã có return request chưa</li>
      *   <li>Tạo ReturnRequest mới với status = "pending"</li>
      * </ol>
-     * 
+     *
      * <p><b>Lưu ý:</b>
      * <ul>
      *   <li>Chỉ cho phép tạo return request khi đơn hàng đã hoàn thành (delivered)</li>
      *   <li>Mỗi đơn hàng chỉ có thể có 1 return request</li>
      *   <li>Return request sẽ có status = "pending" khi tạo</li>
      * </ul>
-     * 
+     *
      * @param orderId ID của đơn hàng
      * @param userId ID của user hiện tại
      * @param requestDto DTO chứa thông tin return request (reason, note, images)
@@ -828,29 +850,29 @@ public class OrderService {
     @Transactional
     public ReturnRequestDto createReturnRequest(Long orderId, Long userId, CreateReturnRequestDto requestDto) {
         log.info("📦 Creating return request for order #{} by user {}", orderId, userId);
-        
+
         // 1. Kiểm tra đơn hàng có thuộc về user không
         Order order = orderRepository.findByIdAndUserIdWithDetails(orderId, userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"));
-        
+
         // 2. Kiểm tra đơn hàng đã hoàn thành (delivered) chưa
         String currentStatus = order.getStatus() != null ? order.getStatus().toLowerCase() : "";
         if (!"delivered".equals(currentStatus)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, 
-                "Chỉ có thể tạo yêu cầu đổi trả khi đơn hàng đã hoàn thành. Trạng thái hiện tại: " + order.getStatus());
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể tạo yêu cầu đổi trả khi đơn hàng đã hoàn thành. Trạng thái hiện tại: " + order.getStatus());
         }
-        
+
         // 3. Kiểm tra đơn hàng đã có return request chưa
         if (returnRequestRepository.existsByOrderId(orderId)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, 
-                "Đơn hàng này đã có yêu cầu đổi trả. Vui lòng kiểm tra lại.");
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Đơn hàng này đã có yêu cầu đổi trả. Vui lòng kiểm tra lại.");
         }
 
         // 4. Lấy user
         @SuppressWarnings("null")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Không tìm thấy user"));
-        
+
         // 5. Tạo ReturnRequest
         // Combine reason and note if note exists
         String reason = requestDto.getReason();
@@ -864,15 +886,15 @@ public class OrderService {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Vui lòng cung cấp đầy đủ thông tin tài khoản để hoàn tiền");
         }
-        
+
         ReturnRequest returnRequest = ReturnRequest.builder()
                 .order(order)
                 .user(user)
                 .reason(reason)
                 .status("pending") // Mặc định là pending
-                .imagesJson(requestDto.getImages() != null && !requestDto.getImages().isEmpty() 
-                    ? JsonUtil.stringListToJson(requestDto.getImages()) 
-                    : null) // Convert images list to JSON, or null if empty
+                .imagesJson(requestDto.getImages() != null && !requestDto.getImages().isEmpty()
+                        ? JsonUtil.stringListToJson(requestDto.getImages())
+                        : null) // Convert images list to JSON, or null if empty
                 .returnMethod("refund")
                 .bankName(requestDto.getBankName())
                 .bankAccountNumber(requestDto.getBankAccountNumber())
@@ -894,17 +916,17 @@ public class OrderService {
         @SuppressWarnings("null")
         ReturnRequest savedReturnRequest = returnRequestRepository.save(returnRequest);
         log.info("✅ Return request #{} created successfully for order #{}", savedReturnRequest.getId(), orderId);
-        
+
         // 7. Convert và trả về ReturnRequestDto
         return convertToReturnRequestDto(savedReturnRequest);
     }
-    
+
     /**
      * Convert ReturnRequest entity to ReturnRequestDto
      */
     private ReturnRequestDto convertToReturnRequestDto(ReturnRequest returnRequest) {
         List<String> images = JsonUtil.parseJsonToStringList(returnRequest.getImagesJson());
-        
+
         return ReturnRequestDto.builder()
                 .id(returnRequest.getId())
                 .orderId(returnRequest.getOrder().getId())
@@ -968,7 +990,7 @@ public class OrderService {
                 .returnRequest(returnRequestSummary)
                 .build();
     }
-    
+
     /**
      * Helper: Chuyển Order Entity -> OrderDto (Chi tiết)
      */
@@ -976,7 +998,7 @@ public class OrderService {
         // Chuyển OrderDetail -> CartItemDto (dùng tạm DTO này)
         List<CartItemDto> detailDtos = order.getOrderDetails().stream().map(detail -> {
             ProductVariant v = detail.getVariant();
-            
+
             // Lấy imageUrl từ variant, nếu null hoặc rỗng thì lấy ảnh primary từ Product_Images
             String imageUrl = v.getImageUrl();
             if ((imageUrl == null || imageUrl.isBlank()) && v.getProduct() != null) {
@@ -986,7 +1008,7 @@ public class OrderService {
                     imageUrl = coverImage.get().getImageUrl();
                 }
             }
-            
+
             return CartItemDto.builder()
                     .variantId(v.getId())
                     .sku(detail.getVariantSku())
@@ -1009,11 +1031,11 @@ public class OrderService {
                 .status(firstPayment.getStatus())
                 .amount(firstPayment.getAmount())
                 .orderId(order.getId());
-        
+
         if (paymentUrl != null) {
             paymentDtoBuilder.transactionId(paymentUrl);
         }
-        
+
         PaymentDto paymentDto = paymentDtoBuilder.build();
 
         // Lấy coupon code nếu có
@@ -1065,7 +1087,7 @@ public class OrderService {
                 .returnRequest(returnRequestDto)
                 .build();
     }
-    
+
     // Dùng lại hàm convertToDto của AddressService (nếu có)
     private AddressDto convertToAddressDto(Address address) {
         return AddressDto.builder()
@@ -1080,14 +1102,14 @@ public class OrderService {
                 .postalCode(address.getPostalCode())
                 .build();
     }
-    
+
     // Helper: Lấy giá cuối cùng (sale hoặc gốc)
     private BigDecimal getEffectivePrice(ProductVariant variant) {
         return (variant.getPriceSale() != null && variant.getPriceSale().compareTo(BigDecimal.ZERO) > 0)
                 ? variant.getPriceSale()
                 : variant.getPriceBase();
     }
-    
+
     /**
      * Generate order number: ORD-YYYYMMDD-XXXX
      * Format: ORD-20250122-0001
@@ -1096,23 +1118,23 @@ public class OrderService {
     private String generateOrderNumber() {
         String datePrefix = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String prefix = "ORD-" + datePrefix + "-%";
-        
+
         // Tối ưu: Query trực tiếp max sequence từ database
         Integer nextSequence = orderRepository.getNextOrderSequence(prefix);
         if (nextSequence == null) {
             nextSequence = 1;
         }
-        
+
         return "ORD-" + datePrefix + "-" + String.format("%04d", nextSequence);
     }
-    
+
     /**
      * Helper: Format currency
      */
     private String formatCurrency(BigDecimal amount) {
         return new java.text.DecimalFormat("#,###").format(amount) + " ₫";
     }
-    
+
     /**
      * Tính shipping fee dựa trên địa chỉ giao hàng
      * Logic:
@@ -1137,31 +1159,4 @@ public class OrderService {
 
         return BigDecimal.valueOf(fee);
     }
-//    private BigDecimal calculateShippingFee(Address address) {
-//        if (address == null || address.getCity() == null) {
-//            // Default shipping fee nếu không có địa chỉ
-//            return BigDecimal.valueOf(50000);
-//        }
-//
-//        String city = address.getCity().toLowerCase().trim();
-//
-//        // Danh sách thành phố lớn (nội thành - phí ship thấp hơn)
-//        String[] majorCities = {
-//            "hà nội", "hanoi", "ha noi",
-//            "tp. hồ chí minh", "tp hcm", "hồ chí minh", "ho chi minh", "hochiminh",
-//            "đà nẵng", "da nang", "danang",
-//            "cần thơ", "can tho", "cantho",
-//            "hải phòng", "hai phong", "haiphong"
-//        };
-//
-//        // Kiểm tra xem có phải thành phố lớn không
-//        for (String majorCity : majorCities) {
-//            if (city.contains(majorCity) || majorCity.contains(city)) {
-//                return BigDecimal.valueOf(30000); // Phí ship nội thành
-//            }
-//        }
-//
-//        // Các tỉnh/thành phố khác
-//        return BigDecimal.valueOf(50000); // Phí ship ngoại thành
-//    }
 }

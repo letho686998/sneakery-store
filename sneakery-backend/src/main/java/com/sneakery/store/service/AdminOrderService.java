@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.CacheManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ public class AdminOrderService {
     private static final BigDecimal VAT_RATE = BigDecimal.valueOf(0.1); // 10%
     private final ReturnRequestRepository returnRequestRepository;
     private final LoyaltyPointRepository loyaltyPointRepository;
+    private final CacheManager cacheManager;
 
     @Transactional(readOnly = true)
     public Page<AdminOrderListDto> getAllOrders(Pageable pageable) {
@@ -128,6 +130,60 @@ public class AdminOrderService {
                     pointsUsed, orderId, customer.getId());
         }
 
+        // ====== RELEASE RESERVED STOCK WHEN CANCELLED ======
+        if (!isPOSOrder
+                && "cancelled".equalsIgnoreCase(normalizedStatus)
+                && !"cancelled".equalsIgnoreCase(oldStatus)
+                && !"delivered".equalsIgnoreCase(oldStatus)) {
+
+            log.info("🔓 Releasing reserved stock for cancelled order #{}", orderId);
+
+            for (OrderDetail detail : order.getOrderDetails()) {
+                ProductVariant variant = detail.getVariant();
+                if (variant != null) {
+                    int releaseQty = detail.getQuantity();
+                    variant.setReservedQuantity(
+                            Math.max(0, variant.getReservedQuantity() - releaseQty)
+                    );
+                    variantRepository.save(variant);
+
+                    Long productId = variant.getProduct().getId();
+                    cacheManager.getCache("products").evict(productId);
+
+                    log.info("🟢 Released {} reserved units for variant {} -> reserved now {}",
+                            releaseQty, variant.getId(), variant.getReservedQuantity());
+                }
+            }
+        }
+
+        // ====== RELEASE RESERVED STOCK WHEN DELIVERY FAILED ======
+        if (!isPOSOrder
+                && "failed".equalsIgnoreCase(normalizedStatus)
+                && !"failed".equalsIgnoreCase(oldStatus)
+                && !"delivered".equalsIgnoreCase(oldStatus)) {
+
+            log.info("🚚 Delivery failed – releasing reserved stock for order #{}", orderId);
+
+            for (OrderDetail detail : order.getOrderDetails()) {
+                ProductVariant variant = detail.getVariant();
+                if (variant != null) {
+                    int releaseQty = detail.getQuantity();
+
+                    variant.setReservedQuantity(
+                            Math.max(0, variant.getReservedQuantity() - releaseQty)
+                    );
+
+                    variantRepository.save(variant);
+
+                    cacheManager.getCache("products")
+                            .evict(variant.getProduct().getId());
+
+                    log.info("🟡 Released {} reserved units for variant {}",
+                            releaseQty, variant.getId());
+                }
+            }
+        }
+
         // Đối với online/offline orders: trừ kho khi status = "completed" (delivered)
         // POS orders đã được trừ kho khi tạo, không cần trừ lại
         if (!isPOSOrder && "delivered".equalsIgnoreCase(normalizedStatus) && !"delivered".equalsIgnoreCase(oldStatus)) {
@@ -158,7 +214,15 @@ public class AdminOrderService {
                 }
 
                 // Trừ kho
+//                variant.setStockQuantity(currentStock - quantityToDeduct);
+                // 🔥 Deduct actual stock
                 variant.setStockQuantity(currentStock - quantityToDeduct);
+
+                // 🔓 Release reserved stock
+                variant.setReservedQuantity(
+                        variant.getReservedQuantity() - quantityToDeduct
+                );
+
                 variantRepository.save(variant);
                 log.info("✅ Deducted {} units from variant {} (new stock: {})",
                         quantityToDeduct, variant.getId(), variant.getStockQuantity());
@@ -213,6 +277,8 @@ public class AdminOrderService {
                 return "packed";
             case "Refunded":
                 return "refunded";
+            case "Failed":
+                return "failed";
             default:
                 // Nếu không match, chuyển về lowercase và log warning
                 String lowercased = normalized.toLowerCase();
@@ -318,7 +384,7 @@ public class AdminOrderService {
                 return CartItemDto.builder()
                         .variantId(null)
                         .productName(detail.getProductName() != null ? detail.getProductName() : "N/A")
-                        .sku(sku) 
+                        .sku(sku)
                         .brandName("N/A")
                         .size(detail.getSize() != null ? detail.getSize() : "")
                         .color(detail.getColor() != null ? detail.getColor() : "")
@@ -351,7 +417,7 @@ public class AdminOrderService {
 
             return CartItemDto.builder()
                     .variantId(v.getId())
-                    .sku(sku) 
+                    .sku(sku)
                     .productName(productName)
                     .brandName(brandName)
                     .size(v.getSize() != null ? v.getSize() : detail.getSize() != null ? detail.getSize() : "")
@@ -366,12 +432,12 @@ public class AdminOrderService {
         Payment p = order.getPayments().stream().findFirst().orElse(null);
         PaymentDto paymentDto = (p == null) ? null
                 : PaymentDto.builder()
-                        .id(p.getId())
-                        .paymentMethod(p.getPaymentMethod())
-                        .status(p.getStatus())
-                        .amount(p.getAmount())
-                        .paidAt(p.getPaidAt())
-                        .build();
+                .id(p.getId())
+                .paymentMethod(p.getPaymentMethod())
+                .status(p.getStatus())
+                .amount(p.getAmount())
+                .paidAt(p.getPaidAt())
+                .build();
 
         List<OrderStatusHistoryDto> historyDtos = order.getStatusHistories().stream()
                 .map(h -> OrderStatusHistoryDto.builder()
@@ -491,11 +557,14 @@ public class AdminOrderService {
 //                        (user != null ? user.getEmail() : null)
 //        );
 
-        posAddress.setPhone(
-                requestDto.getCustomerPhone() != null ?
-                        requestDto.getCustomerPhone() :
-                        (user != null ? user.getPhoneNumber() : null)
-        );
+        String phone =
+                (requestDto.getCustomerPhone() != null && !requestDto.getCustomerPhone().isBlank())
+                        ? requestDto.getCustomerPhone()
+                        : (user != null && user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank())
+                        ? user.getPhoneNumber()
+                        : "0900000000"; // 📌 phone mặc định cho POS guest
+
+        posAddress.setPhone(phone);
 
         posAddress.setLine1("Cửa hàng Sneakery");
         posAddress.setLine2("Bán tại quầy POS - 13 Trịnh Văn Bô");
@@ -503,6 +572,19 @@ public class AdminOrderService {
         posAddress.setDistrict("Quận Nam Từ Liêm");
         posAddress.setWard("Phường Xuân Phương");
         posAddress.setPostalCode("100000");
+
+        // ⚠️ Address bắt buộc phải có user (DB constraint)
+        if (user == null) {
+            user = userRepository.findAll()
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new ApiException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Không tìm thấy user hệ thống để gán cho POS address"
+                    ));
+        }
+
+        posAddress.setUser(user);
 
         Address savedAddress = addressRepository.save(posAddress);
 
@@ -549,6 +631,9 @@ public class AdminOrderService {
             int newStock = variant.getStockQuantity() - itemDto.getQuantity();
             variant.setStockQuantity(newStock);
             variantRepository.save(variant);
+
+            Long productId = variant.getProduct().getId();
+            cacheManager.getCache("products").evict(productId);
 
             // Get price
             BigDecimal price = getEffectivePrice(variant);
@@ -633,10 +718,10 @@ public class AdminOrderService {
 
         if (taxableAmount.compareTo(BigDecimal.ZERO) < 0) taxableAmount = BigDecimal.ZERO;
 
-        BigDecimal taxAmount = taxableAmount.multiply(VAT_RATE);
+        BigDecimal taxAmount = BigDecimal.ZERO;
         order.setTaxAmount(taxAmount);
 
-        BigDecimal totalAmount = taxableAmount.add(taxAmount);
+        BigDecimal totalAmount = taxableAmount;
         order.setTotalAmount(totalAmount);
 
         // =============================
